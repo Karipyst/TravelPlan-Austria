@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Autsria Travel Plan</title>
 <style>
 :root {
@@ -18,7 +18,7 @@
   --orange-soft: #fff6ea;
   --shadow: 0 12px 28px rgba(0,0,0,.06);
 }
-* { box-sizing: border-box; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
@@ -26,6 +26,62 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
+button, input { font: inherit; }
+
+#auth {
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  background:
+    radial-gradient(1200px 600px at 15% 10%, rgba(10,132,255,.20), transparent 50%),
+    radial-gradient(900px 500px at 85% 20%, rgba(90,200,250,.15), transparent 48%),
+    linear-gradient(180deg, rgba(248,250,255,.96), rgba(237,242,252,.96));
+  transition: opacity .45s ease, transform .45s ease;
+}
+.auth-shell {
+  width: min(420px, calc(100vw - 28px));
+  padding: 28px;
+  border-radius: 28px;
+  background: rgba(255,255,255,.74);
+  border: 1px solid rgba(255,255,255,.78);
+  box-shadow: 0 24px 60px rgba(15,23,42,.12), inset 0 1px 0 rgba(255,255,255,.92);
+  backdrop-filter: blur(24px) saturate(1.18);
+}
+.auth-mark {
+  width: 54px; height: 54px; border-radius: 18px; margin-bottom: 16px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(242,246,255,.92));
+  border: 1px solid rgba(60,60,67,.12);
+  box-shadow: 0 10px 20px rgba(0,0,0,.06);
+  color: var(--blue);
+}
+.auth-mark svg { width: 24px; height: 24px; }
+.auth-title { margin: 0 0 6px; font-size: 30px; line-height: 1.02; letter-spacing: -.04em; }
+.auth-sub { margin: 0 0 22px; color: var(--sub); font-size: 14px; line-height: 1.55; }
+.auth-form { display: grid; gap: 11px; }
+.auth-input {
+  width: 100%; height: 52px; border-radius: 16px; border: 1px solid rgba(60,60,67,.12);
+  background: rgba(255,255,255,.92); padding: 0 16px; outline: none;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.82);
+}
+.auth-input:focus {
+  border-color: rgba(10,132,255,.42);
+  box-shadow: 0 0 0 4px rgba(10,132,255,.12), inset 0 1px 0 rgba(255,255,255,.82);
+}
+.auth-btn {
+  width: 100%; height: 52px; border: 0; border-radius: 16px; cursor: pointer;
+  background: linear-gradient(180deg, #1b94ff, #0a84ff);
+  color: white; font-weight: 700; letter-spacing: -.01em;
+  box-shadow: 0 12px 24px rgba(10,132,255,.22);
+}
+.auth-error {
+  min-height: 20px; color: #d70015; font-size: 12px; line-height: 1.45; padding-left: 2px;
+}
+.auth-note { color: var(--sub); font-size: 12px; line-height: 1.5; margin-top: 8px; }
+
+#stage { opacity: 0; transform: translateY(14px) scale(.985); transition: opacity .45s ease, transform .45s ease; }
+body.app-ready #stage { opacity: 1; transform: none; }
+body.app-ready #auth { opacity: 0; transform: scale(1.02); pointer-events: none; }
+
 .wrapper { max-width: 980px; margin: 0 auto; padding: 10px; }
 .day-page {
   background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.95));
@@ -91,9 +147,7 @@ body {
 .event.free .tag { background: var(--orange-soft); color: #9c5b00; }
 .place { font-size: 15px; line-height: 1.2; font-weight: 800; letter-spacing: -.02em; }
 .content { font-size: 11px; line-height: 1.42; margin-bottom: 4px; }
-.meta {
-  display: flex; flex-wrap: wrap; gap: 4px 10px; color: var(--sub); font-size: 9px; line-height: 1.35;
-}
+.meta { display: flex; flex-wrap: wrap; gap: 4px 10px; color: var(--sub); font-size: 9px; line-height: 1.35; }
 .map-link {
   position: absolute; top: 8px; right: 9px; display: inline-flex; align-items: center; justify-content: center;
   width: 24px; height: 24px; border-radius: 999px; text-decoration: none; color: var(--blue);
@@ -125,6 +179,9 @@ body {
 }
 .helper strong { color: var(--ink); }
 @media (max-width: 760px) {
+  .auth-shell { padding: 22px; border-radius: 24px; }
+  .auth-title { font-size: 26px; }
+  .auth-sub { font-size: 13px; margin-bottom: 18px; }
   .wrapper { padding: 6px; }
   .day-page { padding: 12px 11px 10px; border-radius: 18px; margin-bottom: 8px; }
   .day-header { gap: 9px; margin-bottom: 8px; }
@@ -148,8 +205,10 @@ body {
   .map-link svg { width: 11px; height: 11px; }
 }
 @media print {
+  #auth { display: none !important; }
+  body, html { background: white; }
+  #stage { opacity: 1 !important; transform: none !important; }
   @page { size: A4 portrait; margin: 9mm; }
-  body { background: white; }
   .wrapper { max-width: none; padding: 0; margin: 0; }
   .day-page {
     width: auto; margin: 0; padding: 7mm 7mm 6mm; border-radius: 0; box-shadow: none;
@@ -183,12 +242,62 @@ body {
 </style>
 </head>
 <body>
-<div id="error-root"></div>
-<div id="app" class="wrapper" aria-live="polite"></div>
-<div class="helper">このHTMLは同じフォルダの <strong>TravelPlan.csv</strong> を読み込みます。別名にしたい場合は、HTML内の <code>CSV_PATH</code> を変更してください。</div>
+<div id="auth">
+  <div class="auth-shell">
+    <div class="auth-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M7.5 11V8.75a4.5 4.5 0 1 1 9 0V11" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+        <rect x="4.75" y="11" width="14.5" height="9" rx="3" stroke="currentColor" stroke-width="1.9"/>
+        <circle cx="12" cy="15.5" r="1.1" fill="currentColor" stroke="none"/>
+      </svg>
+    </div>
+    <h1 class="auth-title">Travel Itinerary</h1>
+    <p class="auth-sub">パスワードを入力してください。</p>
+    <form class="auth-form" onsubmit="event.preventDefault(); login();">
+      <input id="pw" class="auth-input" type="password" placeholder="パスワード" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <button class="auth-btn" type="submit">ログイン</button>
+      <div id="authError" class="auth-error" aria-live="polite"></div>
+    </form>
+    <div class="auth-note">HTMLとCSVは同じフォルダに置いてください。表示内容はCSVを編集すると更新されます。</div>
+  </div>
+</div>
+
+<div id="stage">
+  <div id="error-root"></div>
+  <div id="app" class="wrapper" aria-live="polite"></div>
+  <div class="helper">このHTMLは同じフォルダの <strong>TravelPlan.csv</strong> を読み込みます。別名にしたい場合は、HTML内の <code>CSV_PATH</code> を変更してください。</div>
+</div>
+
 <script>
 const CSV_PATH = './TravelPlan.csv';
 const DOW = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+const PW_PARTS = ['YjJ0', 'cGVX', 'OXlk', 'UT09'];
+function getPassword(){
+  return atob(atob(PW_PARTS.join('')));
+}
+
+function expectedPassword() {
+  return getPassword();
+}
+
+function login() {
+  const input = document.getElementById('pw');
+  const error = document.getElementById('authError');
+  if (input.value !== expectedPassword()) {
+    error.textContent = 'パスワードが違います。';
+    input.focus();
+    input.select();
+    return;
+  }
+  error.textContent = '';
+  input.blur();
+  document.body.classList.add('app-ready');
+  setTimeout(() => {
+    const auth = document.getElementById('auth');
+    auth.style.display = 'none';
+  }, 500);
+  main();
+}
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -240,11 +349,13 @@ function parseCsv(text) {
     rows.push(row);
   }
   const headers = rows.shift() || [];
-  return rows.filter(r => r.some(cell => String(cell).trim() !== '')).map(r => {
-    const obj = {};
-    headers.forEach((h, idx) => obj[h] = r[idx] ?? '');
-    return obj;
-  });
+  return rows
+    .filter(r => r.some(cell => String(cell).trim() !== ''))
+    .map(r => {
+      const obj = {};
+      headers.forEach((h, idx) => obj[h] = r[idx] ?? '');
+      return obj;
+    });
 }
 
 function classifyEvent(item) {
@@ -300,7 +411,7 @@ function render(data) {
 
   const html = [...groups.entries()].map(([date, items]) => {
     const summary = items[0]['概要'] || '';
-    const events = items.map((item, index) => {
+    const events = items.map((item) => {
       const { cls, label } = classifyEvent(item);
       const note = item['備考'] ? `<div class="note">${escapeHtml(item['備考'])}</div>` : '';
       return `<article class="event ${cls}">
@@ -363,7 +474,34 @@ async function main() {
   }
 }
 
-main();
+
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.querySelector('.auth-form');
+  const input = document.getElementById('pw');
+  const button = document.querySelector('.auth-btn');
+
+  if (form) {
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      login();
+    });
+  }
+  if (button) {
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      login();
+    });
+  }
+  if (input) {
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        login();
+      }
+    });
+  }
+});
+
 </script>
 </body>
 </html>
