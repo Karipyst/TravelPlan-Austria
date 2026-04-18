@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>オーストリア旅行 行程表（CSV読込版）</title>
+<style>
+:root {
+  --bg: #f5f5f7;
+  --paper: rgba(255,255,255,.96);
+  --ink: #1d1d1f;
+  --sub: #6e6e73;
+  --line: #d2d2d7;
+  --blue: #0a84ff;
+  --blue-soft: #edf5ff;
+  --green-soft: #edf9f1;
+  --purple-soft: #f2efff;
+  --orange-soft: #fff6ea;
+  --shadow: 0 12px 28px rgba(0,0,0,.06);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+               "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.wrapper { max-width: 980px; margin: 0 auto; padding: 10px; }
+.day-page {
+  background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.95));
+  border: 1px solid rgba(60,60,67,.10);
+  border-radius: 22px; box-shadow: var(--shadow);
+  margin: 0 auto 12px; padding: 14px 16px 13px;
+  position: relative; overflow: hidden;
+}
+.day-page::before {
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 62px;
+  background: radial-gradient(72% 92% at 100% 0%, rgba(10,132,255,.11), transparent 58%),
+              radial-gradient(55% 85% at 0% 0%, rgba(90,200,250,.08), transparent 52%);
+  pointer-events: none;
+}
+.day-header {
+  display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center;
+  margin-bottom: 10px; position: relative;
+}
+.eyebrow {
+  font-size: 9px; color: var(--sub); letter-spacing: .14em; text-transform: uppercase; margin-bottom: 3px;
+}
+.title-block h1 { font-size: 22px; line-height: 1.06; margin: 0 0 3px; letter-spacing: -.03em; }
+.title-block p { margin: 0; color: var(--sub); font-size: 11px; line-height: 1.4; }
+.date-badge {
+  width: 74px; height: 74px; border-radius: 999px; background: rgba(255,255,255,.94);
+  border: 1.5px solid rgba(29,29,31,.88); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; box-shadow: 0 6px 18px rgba(0,0,0,.04);
+}
+.badge-date { font-size: 21px; font-weight: 800; letter-spacing: -.03em; line-height: 1; }
+.badge-dow { margin-top: 3px; font-size: 11px; font-weight: 700; letter-spacing: .10em; }
+.timeline { position: relative; padding-top: 1px; }
+.event {
+  display: grid; grid-template-columns: 62px 22px 1fr; gap: 10px; align-items: start;
+  position: relative; margin-bottom: 8px; break-inside: avoid;
+}
+.time-col { text-align: right; padding-top: 3px; }
+.time { font-size: 16px; font-weight: 800; line-height: 1; letter-spacing: -.03em; }
+.time-end { margin-top: 3px; color: var(--blue); font-size: 9px; font-weight: 700; }
+.line-col { position: relative; min-height: 100%; display: flex; justify-content: center; }
+.dot {
+  width: 13px; height: 13px; border-radius: 999px; border: 3px solid var(--ink); background: white;
+  position: relative; z-index: 2; margin-top: 6px;
+}
+.line {
+  position: absolute; top: 17px; bottom: -10px; width: 3px; border-radius: 999px;
+  background: linear-gradient(180deg, #63c7ff 0%, #0a84ff 100%);
+}
+.event:last-child .line { display: none; }
+.card {
+  background: rgba(255,255,255,.90); border: 1px solid rgba(60,60,67,.10); border-radius: 14px;
+  padding: 8px 44px 7px 10px; box-shadow: 0 3px 10px rgba(0,0,0,.025); position: relative;
+}
+.card-top {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 4px 7px; margin-bottom: 4px;
+  padding-right: 6px;
+}
+.tag {
+  display: inline-flex; align-items: center; border-radius: 999px; padding: 2px 7px;
+  font-size: 9px; font-weight: 700; letter-spacing: .02em; background: var(--blue-soft); color: #005ecb;
+}
+.event.stay .tag { background: var(--green-soft); color: #117d47; }
+.event.music .tag { background: var(--purple-soft); color: #6246d6; }
+.event.free .tag { background: var(--orange-soft); color: #9c5b00; }
+.place { font-size: 15px; line-height: 1.2; font-weight: 800; letter-spacing: -.02em; }
+.content { font-size: 11px; line-height: 1.42; margin-bottom: 4px; }
+.meta {
+  display: flex; flex-wrap: wrap; gap: 4px 10px; color: var(--sub); font-size: 9px; line-height: 1.35;
+}
+.map-link {
+  position: absolute; top: 8px; right: 9px; display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 999px; text-decoration: none; color: var(--blue);
+  background: rgba(10,132,255,.09); border: 1px solid rgba(10,132,255,.14);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.65);
+}
+.map-link svg { width: 12px; height: 12px; display: block; }
+.map-link:hover { background: rgba(10,132,255,.14); }
+.map-link-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.note {
+  margin-top: 4px; margin-left: 8px; display: inline-block; max-width: min(430px, 100%);
+  background: linear-gradient(180deg, #45c6ff, #17a7f7); color: white; border-radius: 11px;
+  padding: 6px 9px; font-size: 10px; font-weight: 700; line-height: 1.35;
+  position: relative; box-shadow: 0 8px 16px rgba(23,167,247,.16);
+}
+.note::before {
+  content: ""; position: absolute; top: -4px; left: 16px; width: 9px; height: 9px;
+  background: #37bdfd; transform: rotate(45deg); border-radius: 2px;
+}
+.footer-note { margin-top: 8px; color: var(--sub); font-size: 9px; text-align: right; }
+.error-box {
+  max-width: 980px; margin: 14px auto 0; padding: 12px 14px; border-radius: 16px;
+  background: rgba(255,255,255,.9); border: 1px solid rgba(255,59,48,.18); color: #7a1f1a;
+  box-shadow: var(--shadow); font-size: 13px; line-height: 1.5;
+}
+.error-box code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.helper {
+  max-width: 980px; margin: 10px auto 0; padding: 0 10px 10px; color: var(--sub); font-size: 12px; line-height: 1.5;
+}
+.helper strong { color: var(--ink); }
+@media (max-width: 760px) {
+  .wrapper { padding: 6px; }
+  .day-page { padding: 12px 11px 10px; border-radius: 18px; margin-bottom: 8px; }
+  .day-header { gap: 9px; margin-bottom: 8px; }
+  .title-block h1 { font-size: 18px; }
+  .title-block p { font-size: 10px; }
+  .date-badge { width: 62px; height: 62px; }
+  .badge-date { font-size: 17px; }
+  .badge-dow { font-size: 10px; }
+  .event { grid-template-columns: 50px 18px 1fr; gap: 7px; margin-bottom: 7px; }
+  .time { font-size: 14px; }
+  .time-end { font-size: 8px; }
+  .dot { width: 11px; height: 11px; border-width: 3px; margin-top: 5px; }
+  .line { width: 3px; top: 14px; bottom: -9px; }
+  .card { padding: 7px 36px 7px 8px; border-radius: 12px; }
+  .tag { font-size: 8px; padding: 2px 6px; }
+  .place { font-size: 13px; }
+  .content { font-size: 10px; margin-bottom: 4px; }
+  .meta { font-size: 8px; gap: 3px 7px; }
+  .note { font-size: 9px; padding: 5px 7px; border-radius: 10px; }
+  .map-link { width: 21px; height: 21px; top: 7px; right: 7px; }
+  .map-link svg { width: 11px; height: 11px; }
+}
+@media print {
+  @page { size: A4 portrait; margin: 9mm; }
+  body { background: white; }
+  .wrapper { max-width: none; padding: 0; margin: 0; }
+  .day-page {
+    width: auto; margin: 0; padding: 7mm 7mm 6mm; border-radius: 0; box-shadow: none;
+    border: 0; break-after: page; page-break-after: always; overflow: visible; background: white;
+  }
+  .day-page:last-child { break-after: auto; page-break-after: auto; }
+  .day-page::before { height: 46px; }
+  .day-header { margin-bottom: 8px; }
+  .title-block h1 { font-size: 17pt; margin-bottom: 2px; }
+  .title-block p { font-size: 8.5pt; }
+  .date-badge { width: 50pt; height: 50pt; }
+  .badge-date { font-size: 14pt; }
+  .badge-dow { font-size: 7.5pt; }
+  .event { grid-template-columns: 48pt 15pt 1fr; gap: 7pt; margin-bottom: 6pt; }
+  .time { font-size: 11pt; }
+  .time-end { font-size: 6.7pt; margin-top: 2pt; }
+  .dot { width: 8.5pt; height: 8.5pt; border-width: 2.5pt; margin-top: 4pt; }
+  .line { width: 2.5pt; top: 11pt; bottom: -7pt; }
+  .card { padding: 6pt 28pt 5pt 7pt; box-shadow: none; }
+  .tag { font-size: 6.8pt; padding: 2pt 5pt; }
+  .place { font-size: 11pt; }
+  .content { font-size: 8.5pt; line-height: 1.33; margin-bottom: 3pt; }
+  .meta { font-size: 6.8pt; gap: 3pt 6pt; }
+  .note { font-size: 7.2pt; padding: 4pt 6pt; box-shadow: none; max-width: 78%; }
+  .footer-note { font-size: 6.8pt; margin-top: 5pt; }
+  .map-link { width: 14pt; height: 14pt; top: 6pt; right: 6pt; background: rgba(10,132,255,.06); border-color: rgba(10,132,255,.11); }
+  .map-link svg { width: 7pt; height: 7pt; }
+  a { color: inherit; text-decoration: none; }
+  .error-box, .helper { display: none; }
+}
+</style>
+</head>
+<body>
+<div id="error-root"></div>
+<div id="app" class="wrapper" aria-live="polite"></div>
+<div class="helper">このHTMLは同じフォルダの <strong>TravelPlan.csv</strong> を読み込みます。別名にしたい場合は、HTML内の <code>CSV_PATH</code> を変更してください。</div>
+<script>
+const CSV_PATH = './TravelPlan.csv';
+const DOW = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let field = '';
+  let inQuotes = false;
+  const src = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  for (let i = 0; i < src.length; i++) {
+    const ch = src[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (src[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        field += ch;
+      }
+    } else {
+      if (ch === '"') {
+        inQuotes = true;
+      } else if (ch === ',') {
+        row.push(field);
+        field = '';
+      } else if (ch === '\n') {
+        row.push(field);
+        rows.push(row);
+        row = [];
+        field = '';
+      } else {
+        field += ch;
+      }
+    }
+  }
+  if (field.length > 0 || row.length > 0) {
+    row.push(field);
+    rows.push(row);
+  }
+  const headers = rows.shift() || [];
+  return rows.filter(r => r.some(cell => String(cell).trim() !== '')).map(r => {
+    const obj = {};
+    headers.forEach((h, idx) => obj[h] = r[idx] ?? '');
+    return obj;
+  });
+}
+
+function classifyEvent(item) {
+  const place = `${item['場所'] || ''}`;
+  const content = `${item['内容'] || ''}`;
+  if (/宿泊|休憩|ホテル/.test(place + content)) return { cls: 'stay', label: '宿泊' };
+  if (/音楽|オペラ|バレエ|歌劇場/.test(content) && !/館内ツアー|外観/.test(content)) return { cls: 'music', label: '音楽' };
+  if (/空港滞在|自由時間|予備|調整/.test(content)) return { cls: 'free', label: '調整' };
+  if (/移動|到着/.test(content)) return { cls: 'move', label: '移動' };
+  return { cls: 'visit', label: '観光' };
+}
+
+function formatDateJP(dateStr) {
+  const date = new Date(`${dateStr}T00:00:00`);
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}年${m}月${d}日`;
+}
+
+function badgeDate(dateStr) {
+  const date = new Date(`${dateStr}T00:00:00`);
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${m}/${d}`;
+}
+
+function dow(dateStr) {
+  const date = new Date(`${dateStr}T00:00:00`);
+  return DOW[date.getDay()];
+}
+
+function buildMapLink(lat, lng) {
+  if (!lat || !lng) return '';
+  const href = `https://maps.google.com/?q=${encodeURIComponent(lat)},${encodeURIComponent(lng)}`;
+  return `<a class="map-link" href="${href}" target="_blank" rel="noreferrer" aria-label="地図を開く">
+    <span class="map-link-label">地図を開く</span>
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 21s6-4.9 6-10a6 6 0 1 0-12 0c0 5.1 6 10 6 10Z" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="12" cy="11" r="2.35" stroke="currentColor" stroke-width="1.9"/>
+      <path d="M18.5 6.5 21 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+    </svg>
+  </a>`;
+}
+
+function render(data) {
+  const groups = new Map();
+  for (const item of data) {
+    const date = item['日付'];
+    if (!groups.has(date)) groups.set(date, []);
+    groups.get(date).push(item);
+  }
+
+  const html = [...groups.entries()].map(([date, items]) => {
+    const summary = items[0]['概要'] || '';
+    const events = items.map((item, index) => {
+      const { cls, label } = classifyEvent(item);
+      const note = item['備考'] ? `<div class="note">${escapeHtml(item['備考'])}</div>` : '';
+      return `<article class="event ${cls}">
+        <div class="time-col">
+          <div class="time">${escapeHtml(item['開始時間'] || '')}</div>
+          <div class="time-end">${escapeHtml(item['終了時間'] || '')}</div>
+        </div>
+        <div class="line-col">
+          <div class="dot"></div>
+          <div class="line"></div>
+        </div>
+        <div class="content-col">
+          <div class="card">
+            <div class="card-top">
+              <span class="tag">${label}</span>
+              <span class="place">${escapeHtml(item['場所'] || '')}</span>
+            </div>
+            <div class="content">${escapeHtml(item['内容'] || '')}</div>
+            ${buildMapLink(item['緯度'], item['経度'])}
+            <div class="meta"></div>
+          </div>
+          ${note}
+        </div>
+      </article>`;
+    }).join('');
+
+    return `<section class="day-page">
+      <header class="day-header">
+        <div class="title-block">
+          <div class="eyebrow">Austria Itinerary</div>
+          <h1>${formatDateJP(date)}</h1>
+          <p>${escapeHtml(summary)}</p>
+        </div>
+        <div class="date-badge">
+          <div class="badge-date">${badgeDate(date)}</div>
+          <div class="badge-dow">${dow(date)}</div>
+        </div>
+      </header>
+      <main class="timeline">${events}</main>
+    </section>`;
+  }).join('');
+
+  document.getElementById('app').innerHTML = html;
+}
+
+function showError(message) {
+  document.getElementById('error-root').innerHTML = `<div class="error-box">${message}</div>`;
+}
+
+async function main() {
+  try {
+    const response = await fetch(CSV_PATH, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const text = await response.text();
+    const data = parseCsv(text);
+    if (!data.length) throw new Error('CSVに有効な行がありません。');
+    render(data);
+  } catch (error) {
+    showError(`CSVの読込に失敗しました。<br>同じフォルダに <code>${escapeHtml(CSV_PATH)}</code> を置いてください。<br>ローカルファイルとして直接開いている場合は、GitHub Pages や簡易ローカルサーバ経由で開くと安定します。<br>詳細: <code>${escapeHtml(error.message || String(error))}</code>`);
+  }
+}
+
+main();
+</script>
+</body>
+</html>
