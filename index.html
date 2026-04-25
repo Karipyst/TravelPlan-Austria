@@ -894,7 +894,7 @@ function buildMapUrl(item){
   if(item.lat!=null&&item.lng!=null) return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.lat+','+item.lng)}`;
   return '#';
 }
-function formatDateJP(dateObj,raw){if(!(dateObj instanceof Date)||Number.isNaN(dateObj.getTime())) return raw; const y=dateObj.getFullYear(), m=String(dateObj.getMonth()+1).padStart(2,'0'), d=String(dateObj.getDate()).padStart(2,'0'); return `${y}.${m}.${d}`;}
+function formatDateJP(dateObj,raw){if(!(dateObj instanceof Date)||Number.isNaN(dateObj.getTime())) return raw; const y=dateObj.getFullYear(), m=String(dateObj.getMonth()+1).padStart(2,'0'), d=String(dateObj.getDate()).padStart(2,'0'), w=['日','月','火','水','木','金','土'][dateObj.getDay()]; return `${y}.${m}.${d}（${w}）`;}
 function formatTime(start,end){if(start&&end) return `${start}–${end}`; return start||end||'時間未設定';}
 function escapeHTML(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function escapeAttr(v){return escapeHTML(v).replace(/`/g,'&#96;');}
