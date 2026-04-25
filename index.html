@@ -2,51 +2,949 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>オーストリア旅行 行程表</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>オーストリア旅行 行程表 + マップ</title>
+<link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
 <style>
-:root{--bg:#f3f5f4;--paper:#ffffff;--sage:#cfded8;--sage-deep:#2f7f93;--ink:#1f2328;--sub:#697177;--line:#dbe3e0;--dot:#c8ddd7;--shadow:0 14px 34px rgba(15,23,42,.08);--modal:rgba(11,18,24,.26)}
-*{box-sizing:border-box}html,body{margin:0;padding:0;background:var(--bg);color:var(--ink)}body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Hiragino Sans","Yu Gothic",sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}a{text-decoration:none;color:inherit}button,input{font:inherit}body.locked{overflow:hidden}
+:root{
+  --bg:#f3f5f4;--paper:#ffffff;--sage:#cfded8;--sage-deep:#2f7f93;--ink:#1f2328;--sub:#697177;
+  --line:#dbe3e0;--dot:#c8ddd7;--shadow:0 14px 34px rgba(15,23,42,.08);--modal:rgba(11,18,24,.26);
+  --blue:#007aff;--danger:#ff3b30;--route:#2563eb;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink)}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Hiragino Sans","Yu Gothic",sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+a{text-decoration:none;color:inherit} button,input{font:inherit}
+body.locked{overflow:hidden}
+.hidden{display:none !important}
+
 #auth{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:3000;background:linear-gradient(180deg,#e7efec 0%,#f3f5f4 100%)}
 .auth-card{width:min(360px,calc(100vw - 32px));padding:28px 26px 22px;border-radius:28px;background:rgba(255,255,255,.78);backdrop-filter:blur(20px);box-shadow:0 20px 60px rgba(17,24,39,.12), inset 0 1px 0 rgba(255,255,255,.92);border:1px solid rgba(255,255,255,.85)}
-.auth-card h1{margin:0 0 8px;font-size:30px;letter-spacing:.04em;color:var(--sage-deep)}.auth-card p{margin:0 0 18px;color:var(--sub);font-size:14px;line-height:1.6}.auth-form{display:flex;flex-direction:column;gap:10px}.auth-input{height:48px;border:none;border-radius:16px;padding:0 16px;background:#fff;box-shadow:inset 0 0 0 1px rgba(60,60,67,.12);outline:none}.auth-input:focus{box-shadow:inset 0 0 0 2px rgba(47,127,147,.36)}.auth-btn{height:48px;border:none;border-radius:16px;cursor:pointer;background:var(--sage-deep);color:#fff;font-weight:700;letter-spacing:.04em}.auth-error{min-height:1.4em;margin-top:10px;font-size:12px;color:#d93025}.auth-note{margin-top:10px;color:var(--sub);font-size:12px}
-#app{display:none}.wrapper{max-width:1120px;margin:0 auto;padding:18px}.loader-card,.empty{background:#fff;border:1px solid rgba(60,60,67,.10);border-radius:22px;box-shadow:var(--shadow)}.loader-card{display:none;padding:22px}.loader-card.show{display:block}.loader-title{margin:0 0 6px;font-size:20px}.loader-text{margin:0 0 12px;color:var(--sub);font-size:14px;line-height:1.6}.loader-actions{display:flex;gap:10px;flex-wrap:wrap}.loader-btn{height:42px;border:none;border-radius:14px;padding:0 14px;cursor:pointer;font-weight:700;background:var(--sage-deep);color:#fff}.loader-secondary{background:#edf4f2;color:var(--sage-deep)}.empty{padding:28px;text-align:center;color:var(--sub)}
-.day-page{background:var(--paper);border-radius:24px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:18px;border:1px solid rgba(60,60,67,.08);break-inside:avoid}.day-top{background:var(--sage);color:var(--sage-deep);padding:16px 20px 14px;border-bottom:1px solid rgba(255,255,255,.7)}.day-kicker{display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:800;letter-spacing:.10em;text-transform:uppercase}.day-kicker .left{font-size:20px}.day-kicker .right{font-size:16px;white-space:nowrap}.day-date{margin-top:10px;text-align:right;font-size:18px;font-weight:800;letter-spacing:.08em}
-.day-body{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(220px,.9fr);gap:0;min-height:600px}.timeline-side{padding:20px 18px 22px 18px}.memo-side{border-left:3px dotted var(--line);padding:18px 18px 22px;background:linear-gradient(180deg,#fcfcfb 0%, #f7faf8 100%)}.memo-title{font-size:15px;font-weight:800;letter-spacing:.10em;color:#c1d2cc;text-transform:uppercase;margin-bottom:18px}.memo-card{background:rgba(255,255,255,.72);border:1px solid rgba(60,60,67,.08);border-radius:18px;padding:14px 14px 12px;margin-bottom:12px}.memo-label{font-size:11px;color:var(--sub);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}.memo-value{font-size:14px;line-height:1.65;color:var(--ink)}.memo-bullets{margin:8px 0 0;padding-left:18px}.memo-bullets li{margin:0 0 6px;line-height:1.55}.cost-chip-wrap{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.cost-chip{display:inline-flex;align-items:center;min-height:28px;padding:0 10px;border-radius:999px;background:#eef4f2;color:var(--sage-deep);font-size:12px;font-weight:700}
-.event{display:grid;grid-template-columns:minmax(92px,max-content) 56px minmax(0,1fr);gap:12px;align-items:start;position:relative;margin-bottom:12px}.time-col{padding-top:10px;text-align:right;font-size:16px;font-weight:800;letter-spacing:-.02em;white-space:nowrap;line-height:1.2}.icon-col{position:relative;display:flex;justify-content:center;min-height:100%}.icon-stack{position:relative;width:56px;display:flex;flex-direction:column;align-items:center}.icon{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--sage-deep);margin-top:2px;flex:0 0 auto}.icon svg{width:32px;height:32px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.connector{display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px 0 0}.connector span{width:14px;height:14px;border-radius:999px;background:var(--dot);display:block}.event:last-child .connector{display:none}.card{position:relative;min-height:68px;padding:8px 42px 8px 0;cursor:pointer;min-width:0}.place{font-size:16px;font-weight:800;line-height:1.35;letter-spacing:-.02em;margin:0 0 4px}.desc{font-size:14px;line-height:1.55;margin:0;color:var(--ink)}.subline{margin-top:5px;font-size:12px;color:var(--sub);line-height:1.5}.meta{display:flex;flex-wrap:wrap;gap:6px 8px;margin-top:8px}.meta-item{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:999px;background:#f3f6f5;border:1px solid rgba(60,60,67,.07);font-size:11px;color:#586168}.map-link{position:absolute;top:8px;right:0;width:26px;height:26px;border-radius:999px;background:#edf4f2;border:1px solid rgba(47,127,147,.16);display:flex;align-items:center;justify-content:center;color:var(--sage-deep)}.map-link svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}.event:hover .place{color:var(--sage-deep)}
-@media (max-width:900px){.day-body{grid-template-columns:1fr}.memo-side{border-left:none;border-top:3px dotted var(--line)}}@media (max-width:680px){.wrapper{padding:10px}.day-top{padding:14px 14px 12px}.day-kicker .left{font-size:17px}.day-kicker .right{font-size:14px}.day-date{font-size:16px}.timeline-side{padding:16px 12px 18px 10px}.memo-side{padding:14px 12px 16px}.event{grid-template-columns:minmax(108px,max-content) 40px minmax(0,1fr);gap:10px}.time-col{font-size:14px;padding-top:7px}.icon-stack{width:40px}.icon{width:30px;height:30px}.icon svg{width:24px;height:24px}.connector{gap:5px;padding-top:6px}.connector span{width:11px;height:11px}.card{padding-top:6px;padding-right:38px}.place{font-size:15px}.desc{font-size:13px}}
-@media print{body{background:#fff}.wrapper{max-width:none;padding:0}#auth,.loader-card,.modal-overlay{display:none !important}.day-page{margin:0;box-shadow:none;border:none;border-radius:0;page-break-after:always;break-after:page}.day-body{min-height:0}}@page{size:A4 portrait;margin:10mm}
-.modal-overlay{position:fixed;inset:0;background:var(--modal);backdrop-filter:blur(6px);display:none;align-items:flex-end;justify-content:center;z-index:2500;padding:18px}.modal-overlay.show{display:flex}.modal{width:min(760px,100%);max-height:min(84vh,760px);overflow:auto;background:rgba(255,255,255,.93);border:1px solid rgba(255,255,255,.88);border-radius:24px;box-shadow:0 28px 80px rgba(0,0,0,.18);padding:18px;backdrop-filter:blur(24px)}.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px}.modal-kicker{font-size:10px;letter-spacing:.16em;color:var(--sub);text-transform:uppercase;margin-bottom:4px}.modal-title{margin:0 0 6px;font-size:28px;line-height:1.08;letter-spacing:-.04em}.modal-sub{margin:0;color:var(--sub);font-size:13px;line-height:1.5}.modal-close{width:38px;height:38px;border:none;border-radius:999px;background:#f1f3f4;cursor:pointer;font-size:22px}.modal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:12px}.detail-card{background:#f7f9f8;border:1px solid rgba(60,60,67,.08);border-radius:16px;padding:12px 13px}.detail-wide{grid-column:1 / -1}.detail-label{font-size:11px;color:var(--sub);margin-bottom:5px}.detail-value{font-size:14px;line-height:1.6;word-break:break-word}.modal-actions{display:flex;gap:10px;flex-wrap:wrap}.action-btn{display:inline-flex;align-items:center;justify-content:center;height:42px;padding:0 16px;border:none;border-radius:14px;cursor:pointer;font-weight:700}.action-primary{background:#111827;color:#fff}.action-secondary{background:#edf4f2;color:var(--sage-deep)}@media (max-width:680px){.modal-grid{grid-template-columns:1fr}.modal{padding:16px}.modal-title{font-size:24px}}@media (max-width:430px){.event{grid-template-columns:minmax(100px,max-content) 36px minmax(0,1fr);gap:8px}.time-col{font-size:13px}.icon-stack{width:36px}.icon{width:28px;height:28px}.icon svg{width:22px;height:22px}.map-link{top:6px;width:24px;height:24px}}
+.auth-card h1{margin:0 0 8px;font-size:30px;letter-spacing:.04em;color:var(--sage-deep)}
+.auth-card p{margin:0 0 18px;color:var(--sub);font-size:14px;line-height:1.6}
+.auth-form{display:flex;flex-direction:column;gap:10px}
+.auth-input{height:48px;border:none;border-radius:16px;padding:0 16px;background:#fff;box-shadow:inset 0 0 0 1px rgba(60,60,67,.12);outline:none}
+.auth-input:focus{box-shadow:inset 0 0 0 2px rgba(47,127,147,.36)}
+.auth-btn{height:48px;border:none;border-radius:16px;cursor:pointer;background:var(--sage-deep);color:#fff;font-weight:700;letter-spacing:.04em}
+.auth-error{min-height:1.4em;margin-top:10px;font-size:12px;color:#d93025}.auth-note{margin-top:10px;color:var(--sub);font-size:12px}
+
+#app{display:none}
+.app-shell{min-height:100svh}
+.topbar{
+  position:sticky;top:0;z-index:1200;background:rgba(243,245,244,.86);backdrop-filter:blur(16px);
+  border-bottom:1px solid rgba(60,60,67,.10);padding:max(10px, env(safe-area-inset-top)) 12px 10px
+}
+.topbar-inner{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.menu-toggle{
+  width:46px;height:46px;border:none;border-radius:16px;background:#fff;box-shadow:0 10px 22px rgba(15,23,42,.10);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto
+}
+.menu-toggle svg{width:22px;height:22px;stroke:#111827;fill:none;stroke-width:2}
+.topbar-title{font-size:18px;font-weight:800;letter-spacing:.03em}
+.topbar-sub{font-size:12px;color:var(--sub)}
+
+.menu-overlay{position:fixed;inset:0;background:rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:1400}
+.menu-overlay.show{opacity:1;pointer-events:auto}
+.side-menu{
+  position:fixed;inset:0 auto 0 0;width:min(380px,92vw);height:100dvh;background:#fff;z-index:1500;
+  transform:translateX(-100%);transition:transform .35s ease;box-shadow:10px 0 28px rgba(0,0,0,.18);display:flex;flex-direction:column
+}
+.side-menu.open{transform:translateX(0)}
+.menu-header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 16px 14px;border-bottom:1px solid #eef2f7}
+.menu-header h3{margin:0;font-size:20px}
+.menu-close{border:none;background:#f3f4f6;width:36px;height:36px;border-radius:12px;cursor:pointer}
+.menu-scroll{overflow-y:auto;padding:14px 14px 28px}
+.menu-block{margin-bottom:14px;background:#f8fafc;border:1px solid #eef2f7;border-radius:16px;padding:12px}
+.menu-block h4{margin:0 0 10px;font-size:14px}
+.view-switch{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.switch-btn{
+  height:42px;border:none;border-radius:12px;background:#eef4f2;color:var(--sage-deep);font-weight:800;cursor:pointer
+}
+.switch-btn.active{background:var(--sage-deep);color:#fff}
+.legend-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 8px}
+.legend-row{display:flex;align-items:center;gap:7px;min-width:0;font-size:12px;line-height:1.25}
+.legend-row span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.legend-swatch{width:11px;height:11px;border-radius:999px;display:inline-block;flex:0 0 auto;box-shadow:0 0 0 2px rgba(255,255,255,.9)}
+.route-actions{display:grid;gap:10px}
+.route-summary{font-size:12px;line-height:1.6;color:#475569;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:10px 12px}
+.btn{height:42px;border:none;border-radius:12px;cursor:pointer;font-weight:800}
+.btn-primary{background:var(--sage-deep);color:#fff}
+.btn-secondary{background:#eef4f2;color:var(--sage-deep)}
+.btn-danger{background:#fff0ef;color:#c62828}
+.selected-list{display:flex;flex-direction:column;gap:8px}
+.selected-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;background:#fff;border:1px solid #e5e7eb;border-radius:12px}
+.selected-main{min-width:0}
+.selected-name{font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.selected-meta{font-size:12px;color:var(--sub)}
+.remove-btn{width:30px;height:30px;border:none;border-radius:999px;background:#eef2f7;cursor:pointer}
+
+.wrapper{max-width:1120px;margin:0 auto;padding:18px}
+.loader-card,.empty{background:#fff;border:1px solid rgba(60,60,67,.10);border-radius:22px;box-shadow:var(--shadow)}
+.loader-card{display:none;padding:22px}.loader-card.show{display:block}
+.loader-title{margin:0 0 6px;font-size:20px}.loader-text{margin:0 0 12px;color:var(--sub);font-size:14px;line-height:1.6}
+.loader-actions{display:flex;gap:10px;flex-wrap:wrap}.loader-btn{height:42px;border:none;border-radius:14px;padding:0 14px;cursor:pointer;font-weight:700;background:var(--sage-deep);color:#fff}.loader-secondary{background:#edf4f2;color:var(--sage-deep)}
+.empty{padding:28px;text-align:center;color:var(--sub)}
+
+.day-page{background:var(--paper);border-radius:24px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:18px;border:1px solid rgba(60,60,67,.08);break-inside:avoid}
+.day-top{background:var(--sage);color:var(--sage-deep);padding:16px 20px 14px;border-bottom:1px solid rgba(255,255,255,.7)}
+.day-kicker{display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:800;letter-spacing:.10em;text-transform:uppercase}
+.day-kicker .left{font-size:20px}.day-kicker .right{font-size:16px;white-space:nowrap}.day-date{margin-top:10px;text-align:right;font-size:18px;font-weight:800;letter-spacing:.08em}
+.day-body{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(220px,.9fr);gap:0;min-height:600px}
+.timeline-side{padding:20px 18px 22px 18px}.memo-side{border-left:3px dotted var(--line);padding:18px 18px 22px;background:linear-gradient(180deg,#fcfcfb 0%, #f7faf8 100%)}
+.memo-title{font-size:15px;font-weight:800;letter-spacing:.10em;color:#c1d2cc;text-transform:uppercase;margin-bottom:18px}.memo-card{background:rgba(255,255,255,.72);border:1px solid rgba(60,60,67,.08);border-radius:18px;padding:14px 14px 12px;margin-bottom:12px}
+.memo-label{font-size:11px;color:var(--sub);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}.memo-value{font-size:14px;line-height:1.65;color:var(--ink)}.memo-bullets{margin:8px 0 0;padding-left:18px}.memo-bullets li{margin:0 0 6px;line-height:1.55}
+.cost-chip-wrap{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.cost-chip{display:inline-flex;align-items:center;min-height:28px;padding:0 10px;border-radius:999px;background:#eef4f2;color:var(--sage-deep);font-size:12px;font-weight:700}
+.event{display:grid;grid-template-columns:minmax(92px,max-content) 56px minmax(0,1fr);gap:12px;align-items:start;position:relative;margin-bottom:12px}
+.time-col{padding-top:10px;text-align:right;font-size:16px;font-weight:800;letter-spacing:-.02em;white-space:nowrap;line-height:1.2}
+.icon-col{position:relative;display:flex;justify-content:center;min-height:100%}.icon-stack{position:relative;width:56px;display:flex;flex-direction:column;align-items:center}
+.icon{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--sage-deep);margin-top:2px;flex:0 0 auto}
+.icon svg{width:32px;height:32px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.connector{display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px 0 0}.connector span{width:14px;height:14px;border-radius:999px;background:var(--dot);display:block}
+.event:last-child .connector{display:none}.card{position:relative;min-height:68px;padding:8px 42px 8px 0;cursor:pointer;min-width:0}.place{font-size:16px;font-weight:800;line-height:1.35;letter-spacing:-.02em;margin:0 0 4px}
+.desc{font-size:14px;line-height:1.55;margin:0;color:var(--ink)}.subline{margin-top:5px;font-size:12px;color:var(--sub);line-height:1.5}.meta{display:flex;flex-wrap:wrap;gap:6px 8px;margin-top:8px}.meta-item{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:999px;background:#f3f6f5;border:1px solid rgba(60,60,67,.07);font-size:11px;color:#586168}
+.map-link{position:absolute;top:8px;right:0;width:26px;height:26px;border-radius:999px;background:#edf4f2;border:1px solid rgba(47,127,147,.16);display:flex;align-items:center;justify-content:center;color:var(--sage-deep)}
+.map-link svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}.event:hover .place{color:var(--sage-deep)}
+
+#scheduleView{display:block}
+#mapView{display:none}
+.map-stage{height:calc(100svh - 82px);display:grid;grid-template-columns:minmax(280px,340px) minmax(0,1fr);gap:16px;max-width:1280px;margin:0 auto;padding:16px}
+.map-sidebar{background:#fff;border:1px solid rgba(60,60,67,.10);border-radius:24px;box-shadow:var(--shadow);padding:14px;overflow:auto}
+.map-panel-title{font-size:15px;font-weight:800;margin:0 0 10px}
+.map-note{font-size:12px;line-height:1.6;color:var(--sub);margin:0 0 12px}
+#mapCanvas{width:100%;height:100%;border-radius:24px;overflow:hidden;box-shadow:var(--shadow);border:1px solid rgba(60,60,67,.08)}
+.map-shell{position:relative;min-height:0}
+.map-overlay-top{
+  position:absolute;top:14px;right:14px;z-index:20;background:rgba(255,255,255,.95);border-radius:16px;padding:10px 12px;
+  box-shadow:0 10px 24px rgba(15,23,42,.12);font-size:12px;color:#334155;max-width:min(340px, calc(100% - 28px))
+}
+.map-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;background:#eef4f2;color:var(--sage-deep);font-size:12px;font-weight:700;margin:6px 6px 0 0}
+
+.marker-pin{
+  width:18px;height:18px;border-radius:999px;border:2px solid #fff;box-shadow:0 6px 14px rgba(0,0,0,.20)
+}
+.maplibregl-popup-content{border-radius:18px;padding:12px 12px 10px;box-shadow:0 18px 40px rgba(15,23,42,.15)}
+.popup-card{min-width:220px;display:flex;flex-direction:column;gap:10px}
+.popup-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.popup-title{font-size:14px;font-weight:800}
+.popup-date{font-size:11px;color:#64748b}
+.popup-meta{font-size:12px;color:#6b7280;line-height:1.5}
+.popup-actions{display:flex;gap:8px}.popup-actions button{flex:1;height:34px;border:none;border-radius:10px;font-weight:700;cursor:pointer}
+.popup-pick{background:var(--sage-deep);color:#fff}.popup-detail{background:#eef2ff;color:#1d4ed8}
+
+.modal-overlay{position:fixed;inset:0;background:var(--modal);backdrop-filter:blur(6px);display:none;align-items:flex-end;justify-content:center;z-index:2500;padding:18px}
+.modal-overlay.show{display:flex}
+.modal{width:min(860px,100%);max-height:min(86vh,820px);overflow:auto;background:rgba(255,255,255,.93);border:1px solid rgba(255,255,255,.88);border-radius:24px;box-shadow:0 28px 80px rgba(0,0,0,.18);padding:18px;backdrop-filter:blur(24px)}
+.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px}
+.modal-kicker{font-size:10px;letter-spacing:.16em;color:var(--sub);text-transform:uppercase;margin-bottom:4px}
+.modal-title{margin:0 0 6px;font-size:28px;line-height:1.08;letter-spacing:-.04em}
+.modal-sub{margin:0;color:var(--sub);font-size:13px;line-height:1.5}
+.modal-close{width:38px;height:38px;border:none;border-radius:999px;background:#f1f3f4;cursor:pointer;font-size:22px}
+.modal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.detail-card{background:#f7f9f8;border:1px solid rgba(60,60,67,.08);border-radius:16px;padding:12px 13px}.detail-wide{grid-column:1 / -1}.detail-label{font-size:11px;color:var(--sub);margin-bottom:5px}.detail-value{font-size:14px;line-height:1.6;word-break:break-word}
+.detail-entries{display:grid;gap:10px;margin-top:12px}
+.entry-card{background:#fff;border:1px solid rgba(60,60,67,.08);border-radius:18px;padding:14px}
+.entry-time{font-size:12px;font-weight:800;color:var(--sage-deep);letter-spacing:.05em}
+.entry-title{font-size:16px;font-weight:800;margin:5px 0 6px}
+.entry-text{font-size:14px;line-height:1.6;color:var(--ink)}
+.entry-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.entry-chip{display:inline-flex;align-items:center;min-height:28px;padding:0 10px;border-radius:999px;background:#eef4f2;color:var(--sage-deep);font-size:12px;font-weight:700}
+.modal-actions{display:flex;gap:10px;flex-wrap:wrap}.action-btn{display:inline-flex;align-items:center;justify-content:center;height:42px;padding:0 16px;border:none;border-radius:14px;cursor:pointer;font-weight:700}
+.action-primary{background:#111827;color:#fff}.action-secondary{background:#edf4f2;color:var(--sage-deep)}
+
+#loading{position:fixed;inset:0;display:flex;justify-content:center;align-items:center;background:rgba(0,0,0,0.25);opacity:0;pointer-events:none;transition:.3s;z-index:2000}
+#loading.active{opacity:1;pointer-events:auto}.spinner{width:40px;height:40px;border:4px solid #fff;border-top:4px solid transparent;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media (max-width:1000px){
+  .day-body{grid-template-columns:1fr}
+  .memo-side{border-left:none;border-top:3px dotted var(--line)}
+  .map-stage{grid-template-columns:1fr;height:auto;min-height:calc(100svh - 82px)}
+  .map-sidebar{order:2}
+  .map-shell{order:1;height:62svh}
+}
+@media (max-width:680px){
+  .wrapper{padding:10px}
+  .day-top{padding:14px 14px 12px}.day-kicker .left{font-size:17px}.day-kicker .right{font-size:14px}.day-date{font-size:16px}
+  .timeline-side{padding:16px 12px 18px 10px}.memo-side{padding:14px 12px 16px}
+  .event{grid-template-columns:minmax(108px,max-content) 40px minmax(0,1fr);gap:10px}.time-col{font-size:14px;padding-top:7px}.icon-stack{width:40px}.icon{width:30px;height:30px}.icon svg{width:24px;height:24px}.connector{gap:5px;padding-top:6px}.connector span{width:11px;height:11px}.card{padding-top:6px;padding-right:38px}.place{font-size:15px}.desc{font-size:13px}
+  .modal-grid{grid-template-columns:1fr}.modal{padding:16px}.modal-title{font-size:24px}
+  .topbar-inner{gap:10px}.topbar-title{font-size:16px}
+  .map-stage{padding:10px}
+  .map-shell{height:56svh}
+}
+@media (max-width:430px){
+  .event{grid-template-columns:minmax(100px,max-content) 36px minmax(0,1fr);gap:8px}.time-col{font-size:13px}.icon-stack{width:36px}.icon{width:28px;height:28px}.icon svg{width:22px;height:22px}.map-link{top:6px;width:24px;height:24px}
+}
+@media print{
+  body{background:#fff}.topbar,#auth,.loader-card,.modal-overlay,#mapView{display:none !important}.wrapper{max-width:none;padding:0}
+  .day-page{margin:0;box-shadow:none;border:none;border-radius:0;page-break-after:always;break-after:page}.day-body{min-height:0}
+}
+@page{size:A4 portrait;margin:10mm}
 </style>
 </head>
 <body class="locked">
-<section id="auth" aria-label="ログイン画面"><div class="auth-card"><h1>AUSTRIA TRIP</h1><p>CSVを読み込んで表示する行程表です。パスワードを入力すると、タイムライン形式で表示されます。</p><form id="authForm" class="auth-form"><input id="passwordInput" class="auth-input" type="password" placeholder="パスワード" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false"><button id="loginButton" class="auth-btn" type="submit">ログイン</button></form><div id="authError" class="auth-error" aria-live="polite"></div><div class="auth-note">Enterキーでもログインできます</div></div></section>
-<div id="app"><div class="wrapper"><section id="csvLoader" class="loader-card" aria-live="polite"><h2 class="loader-title">CSVを読み込めませんでした</h2><p class="loader-text">既定CSVの取得に失敗しました。ローカルで開いている場合は、CSVを選択するとそのまま表示できます。</p><div class="loader-actions"><button id="pickCsvButton" class="loader-btn" type="button">CSVを選択</button><button id="retryCsvButton" class="loader-btn loader-secondary" type="button">再読み込み</button></div><input id="csvFileInput" type="file" accept=".csv,text/csv" hidden></section><main id="daysRoot"></main></div></div>
-<div id="detailOverlay" class="modal-overlay" aria-hidden="true"><article class="modal" role="dialog" aria-modal="true" aria-labelledby="detailTitle"><div class="modal-head"><div><div class="modal-kicker">detail</div><h2 id="detailTitle" class="modal-title">詳細</h2><p id="detailSub" class="modal-sub"></p></div><button id="detailClose" class="modal-close" type="button" aria-label="閉じる">×</button></div><div id="detailGrid" class="modal-grid"></div><div class="modal-actions"><a id="detailMapLink" class="action-btn action-primary" href="#" target="_blank" rel="noopener noreferrer">地図で開く</a><button id="detailCloseSecondary" class="action-btn action-secondary" type="button">閉じる</button></div></article></div>
+<div id="loading"><div class="spinner"></div></div>
+
+<section id="auth" aria-label="ログイン画面">
+  <div class="auth-card">
+    <h1>AUSTRIA TRIP</h1>
+    <p>CSVを読み込んで表示する行程表です。ログイン後、工程表とマップを切り替えられます。</p>
+    <form id="authForm" class="auth-form">
+      <input id="passwordInput" class="auth-input" type="password" placeholder="パスワード" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <button id="loginButton" class="auth-btn" type="submit">ログイン</button>
+    </form>
+    <div id="authError" class="auth-error" aria-live="polite"></div>
+    <div class="auth-note">Enterキーでもログインできます</div>
+  </div>
+</section>
+
+<div id="app">
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <button id="menuToggle" class="menu-toggle" type="button" aria-label="メニューを開く">
+          <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+        <div>
+          <div class="topbar-title">AUSTRIA TRIP</div>
+          <div class="topbar-sub" id="topbarSub">工程表</div>
+        </div>
+      </div>
+    </header>
+
+    <div id="menuOverlay" class="menu-overlay"></div>
+    <aside id="sideMenu" class="side-menu" aria-hidden="true">
+      <div class="menu-header">
+        <h3>メニュー</h3>
+        <button id="menuClose" class="menu-close" type="button" aria-label="閉じる">×</button>
+      </div>
+      <div class="menu-scroll">
+        <section class="menu-block">
+          <h4>表示切替</h4>
+          <div class="view-switch">
+            <button id="switchSchedule" class="switch-btn active" type="button">工程表</button>
+            <button id="switchMap" class="switch-btn" type="button">マップ</button>
+          </div>
+        </section>
+
+        <section class="menu-block" id="mapOnlyBlock1">
+          <h4>日付ごとの色</h4>
+          <div id="dateLegend" class="legend-list"></div>
+        </section>
+
+        <section class="menu-block" id="mapOnlyBlock2">
+          <h4>選択ルート</h4>
+          <div class="route-summary" id="routeSummary">地点を2つ以上選ぶと、現在の選択順で経路表示できます。</div>
+          <div class="route-actions" style="margin-top:10px">
+            <button id="btnDrawRoute" class="btn btn-primary" type="button">経路を表示</button>
+            <button id="btnClearRoute" class="btn btn-danger" type="button">ルートを消去</button>
+          </div>
+          <div id="selectedList" class="selected-list" style="margin-top:10px"></div>
+        </section>
+
+        <section class="menu-block">
+          <h4>CSV</h4>
+          <p class="map-note">既定では同じ階層の TravelPlan.csv を読み込みます。ローカル確認時は手動選択も可能です。</p>
+          <div class="loader-actions">
+            <button id="pickCsvButton" class="loader-btn" type="button">CSVを選択</button>
+            <button id="retryCsvButton" class="loader-btn loader-secondary" type="button">再読み込み</button>
+          </div>
+          <input id="csvFileInput" type="file" accept=".csv,text/csv" hidden>
+        </section>
+      </div>
+    </aside>
+
+    <main id="scheduleView">
+      <div class="wrapper">
+        <section id="csvLoader" class="loader-card" aria-live="polite">
+          <h2 class="loader-title">CSVを読み込めませんでした</h2>
+          <p class="loader-text">既定CSVの取得に失敗しました。ローカルで開いている場合は、CSVを選択するとそのまま表示できます。</p>
+          <div class="loader-actions">
+            <button class="loader-btn" type="button" onclick="document.getElementById('csvFileInput').click()">CSVを選択</button>
+            <button class="loader-btn loader-secondary" type="button" onclick="loadCSV()">再読み込み</button>
+          </div>
+        </section>
+        <main id="daysRoot"></main>
+      </div>
+    </main>
+
+    <section id="mapView">
+      <div class="map-stage">
+        <aside class="map-sidebar">
+          <h3 class="map-panel-title">マップ操作</h3>
+          <p class="map-note">ピンを押すと、その地点・その日の詳細を表示します。ルートは、ポップアップから選択した地点を対象に計算します。</p>
+          <div id="inlineLegend"></div>
+          <div id="inlineRouteInfo" class="route-summary" style="margin-top:12px">地点を2つ以上選ぶと、現在の選択順で経路表示できます。</div>
+        </aside>
+        <div class="map-shell">
+          <div id="mapCanvas"></div>
+          <div class="map-overlay-top" id="mapOverlayTop">日付ごとに色分けしています。重なる地点はクラスタ表示されます。</div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div id="detailOverlay" class="modal-overlay" aria-hidden="true">
+  <article class="modal" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+    <div class="modal-head">
+      <div>
+        <div class="modal-kicker">detail</div>
+        <h2 id="detailTitle" class="modal-title">詳細</h2>
+        <p id="detailSub" class="modal-sub"></p>
+      </div>
+      <button id="detailClose" class="modal-close" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div id="detailGrid" class="modal-grid"></div>
+    <div id="detailEntries" class="detail-entries"></div>
+    <div class="modal-actions" style="margin-top:12px">
+      <a id="detailMapLink" class="action-btn action-primary" href="#" target="_blank" rel="noopener noreferrer">地図で開く</a>
+      <button id="detailSelectBtn" class="action-btn action-secondary" type="button">ルートに追加</button>
+      <button id="detailCloseSecondary" class="action-btn action-secondary" type="button">閉じる</button>
+    </div>
+  </article>
+</div>
+
 <script>
-const CSV_PATH='TravelPlan.csv'; const PW_PARTS=['b2tp','eW9y','dQ==']; const APP_TITLE='AUSTRIA TRIP'; const SECTION_LABEL='SCHEDULE'; let rows=[];
-const authForm=document.getElementById('authForm'), passwordInput=document.getElementById('passwordInput'), authError=document.getElementById('authError'), auth=document.getElementById('auth'), app=document.getElementById('app'), daysRoot=document.getElementById('daysRoot'), csvLoader=document.getElementById('csvLoader'), csvFileInput=document.getElementById('csvFileInput');
-authForm.addEventListener('submit',e=>{e.preventDefault();login();}); document.getElementById('loginButton').addEventListener('click',e=>{e.preventDefault();login();}); passwordInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();login();}});
-document.getElementById('pickCsvButton').addEventListener('click',()=>csvFileInput.click()); document.getElementById('retryCsvButton').addEventListener('click',()=>loadCSV()); csvFileInput.addEventListener('change',async e=>{const f=e.target.files?.[0]; if(!f)return; const text=await f.text(); rows=normalizeRows(parseCSV(text)); render(); csvLoader.classList.remove('show');});
-function login(){const expected=atob(PW_PARTS.join('')); if(passwordInput.value!==expected){authError.textContent='パスワードが違います'; return;} authError.textContent=''; auth.style.display='none'; app.style.display='block'; document.body.classList.remove('locked'); loadCSV();}
-async function loadCSV(){try{const res=await fetch(CSV_PATH,{cache:'no-store'}); if(!res.ok) throw new Error('HTTP '+res.status); const text=await res.text(); rows=normalizeRows(parseCSV(text)); csvLoader.classList.remove('show'); render();}catch(err){rows=[]; render(); csvLoader.classList.add('show');}}
-function parseCSV(text){const out=[]; let row=[], value='', inQuotes=false; for(let i=0;i<text.length;i++){const ch=text[i], next=text[i+1]; if(ch==='"'){ if(inQuotes && next==='"'){value+='"'; i++;} else inQuotes=!inQuotes; } else if(ch===',' && !inQuotes){ row.push(value); value=''; } else if((ch==='\n'||ch==='\r') && !inQuotes){ if(ch==='\r'&&next==='\n') i++; row.push(value); value=''; if(row.some(c=>c!=='')) out.push(row); row=[]; } else value+=ch;} if(value!==''||row.length){row.push(value); if(row.some(c=>c!=='')) out.push(row);} if(!out.length) return []; const headers=out[0].map(h=>String(h).trim()); return out.slice(1).map(cols=>{const obj={}; headers.forEach((h,idx)=>obj[h]=String(cols[idx]??'').trim()); return obj;}); }
-function normalizeRows(items){return items.map((r,idx)=>({id:idx,date:r['日付']||'',start:r['開始時間']||'',end:r['終了時間']||'',place:r['場所']||'',content:r['内容']||'',summary:r['概要']||'',kind:r['種別']||'',transport:r['移動手段']||'',moveCost:r['移動費']||'',fee:r['利用料']||'',note:r['備考']||'',icon:r['アイコン']||'',lat:toNumber(r['緯度']),lng:toNumber(r['経度'])}));}
+const CSV_PATH='TravelPlan.csv';
+const PW_PARTS=['b2tp','eW9y','dQ=='];
+const APP_TITLE='AUSTRIA TRIP';
+const SECTION_LABEL='SCHEDULE';
+const MAPTILER_KEY='5803br5MI3qRfp9DVSHL';
+const STORAGE_KEY='austria-trip-map-stage1';
+
+const authForm=document.getElementById('authForm');
+const passwordInput=document.getElementById('passwordInput');
+const authError=document.getElementById('authError');
+const auth=document.getElementById('auth');
+const app=document.getElementById('app');
+const daysRoot=document.getElementById('daysRoot');
+const csvLoader=document.getElementById('csvLoader');
+const csvFileInput=document.getElementById('csvFileInput');
+const detailOverlay=document.getElementById('detailOverlay');
+const detailTitle=document.getElementById('detailTitle');
+const detailSub=document.getElementById('detailSub');
+const detailGrid=document.getElementById('detailGrid');
+const detailEntries=document.getElementById('detailEntries');
+const detailMapLink=document.getElementById('detailMapLink');
+const detailSelectBtn=document.getElementById('detailSelectBtn');
+
+let rows=[];
+let mapRows=[];
+let map;
+let pointPopup=null;
+let activeView='schedule';
+let mapPoints=[];
+let selectedPoints=[];
+
+const dayColors = [
+  '#0ea5e9','#22c55e','#f59e0b','#ef4444','#8b5cf6','#14b8a6','#ec4899','#f97316','#3b82f6','#84cc16','#06b6d4','#6366f1'
+];
+let dateColorMap={};
+
+authForm.addEventListener('submit',e=>{e.preventDefault();login();});
+document.getElementById('loginButton').addEventListener('click',e=>{e.preventDefault();login();});
+passwordInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();login();}});
+
+document.getElementById('pickCsvButton').addEventListener('click',()=>csvFileInput.click());
+document.getElementById('retryCsvButton').addEventListener('click',()=>loadCSV());
+csvFileInput.addEventListener('change',async e=>{
+  const f=e.target.files?.[0];
+  if(!f) return;
+  const text=await f.text();
+  rows=normalizeRows(parseCSV(text));
+  afterRowsLoaded();
+  csvLoader.classList.remove('show');
+});
+
+document.getElementById('menuToggle').addEventListener('click',toggleMenu);
+document.getElementById('menuClose').addEventListener('click',closeMenu);
+document.getElementById('menuOverlay').addEventListener('click',closeMenu);
+document.getElementById('switchSchedule').addEventListener('click',()=>setView('schedule'));
+document.getElementById('switchMap').addEventListener('click',()=>setView('map'));
+document.getElementById('btnDrawRoute').addEventListener('click',drawRoute);
+document.getElementById('btnClearRoute').addEventListener('click',clearRoute);
+document.getElementById('detailClose').addEventListener('click',closeDetail);
+document.getElementById('detailCloseSecondary').addEventListener('click',closeDetail);
+detailOverlay.addEventListener('click',e=>{if(e.target===detailOverlay) closeDetail();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDetail(); closeMenu(); closePointPopup();}});
+
+function showLoading(v){document.getElementById('loading').classList.toggle('active',v);}
+
+function login(){
+  const expected=atob(PW_PARTS.join(''));
+  if(passwordInput.value!==expected){authError.textContent='パスワードが違います'; return;}
+  authError.textContent='';
+  auth.style.display='none';
+  app.style.display='block';
+  document.body.classList.remove('locked');
+  hydrateState();
+  loadCSV();
+}
+
+async function loadCSV(){
+  try{
+    const res=await fetch(CSV_PATH,{cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const text=await res.text();
+    rows=normalizeRows(parseCSV(text));
+    csvLoader.classList.remove('show');
+    afterRowsLoaded();
+  }catch(err){
+    rows=[];
+    render();
+    csvLoader.classList.add('show');
+  }
+}
+
+function afterRowsLoaded(){
+  render();
+  buildMapPoints();
+  selectedPoints = selectedPoints.filter(id => mapPoints.some(p => p.id === id));
+  buildDateColors();
+  renderLegends();
+  renderSelectedPoints();
+  updateRouteSummary();
+  ensureMapReady();
+  if(map?.isStyleLoaded()){
+    refreshMapSource();
+    clearRoute();
+  }
+  setView(activeView);
+}
+
+function parseCSV(text){
+  text = String(text||'').replace(/^\uFEFF/,'');
+  const out=[]; let row=[], value='', inQuotes=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i], next=text[i+1];
+    if(ch==='"'){
+      if(inQuotes && next==='"'){value+='"'; i++;}
+      else inQuotes=!inQuotes;
+    }else if(ch===',' && !inQuotes){
+      row.push(value); value='';
+    }else if((ch==='\n'||ch==='\r') && !inQuotes){
+      if(ch==='\r'&&next==='\n') i++;
+      row.push(value); value='';
+      if(row.some(c=>c!=='')) out.push(row);
+      row=[];
+    }else value+=ch;
+  }
+  if(value!==''||row.length){row.push(value); if(row.some(c=>c!=='')) out.push(row);}
+  if(!out.length) return [];
+  const headers=out[0].map(h=>String(h).trim());
+  return out.slice(1).map(cols=>{
+    const obj={};
+    headers.forEach((h,idx)=>obj[h]=String(cols[idx]??'').trim());
+    return obj;
+  });
+}
+
+function normalizeRows(items){
+  return items.map((r,idx)=>({
+    id:idx,
+    date:r['日付']||'',
+    start:r['開始時間']||'',
+    end:r['終了時間']||'',
+    place:r['場所']||'',
+    content:r['内容']||'',
+    summary:r['概要']||'',
+    kind:r['種別']||'',
+    transport:r['移動手段']||'',
+    moveCost:r['移動費']||'',
+    fee:r['利用料']||'',
+    note:r['備考']||'',
+    icon:r['アイコン']||'',
+    lat:toNumber(r['緯度']),
+    lng:toNumber(r['経度'])
+  }));
+}
 function toNumber(v){const n=Number(v); return Number.isFinite(n)?n:null;}
-function render(){ if(!rows.length){daysRoot.innerHTML='<section class="empty">CSVを読み込むと、ここに日ごとの行程が表示されます。</section>'; return;} const groups=groupByDate(rows); daysRoot.innerHTML=groups.map((g,idx)=>renderDay(g,idx)).join(''); daysRoot.querySelectorAll('.card[data-id]').forEach(card=>card.addEventListener('click',()=>openDetail(Number(card.dataset.id)))); }
-function groupByDate(items){const map=new Map(); items.forEach(item=>{if(!map.has(item.date)) map.set(item.date,[]); map.get(item.date).push(item);}); return [...map.entries()].map(([date,list])=>({date,items:list}));}
-function renderDay(group,idx){const date=new Date(group.date+'T00:00:00'); const title=getDayTitle(group,idx); const memo=buildDailyMemo(group); return `<section class="day-page"><header class="day-top"><div class="day-kicker"><span class="left">${SECTION_LABEL}</span><span class="right">${APP_TITLE} DAY${idx+1}</span></div><div class="day-date">${escapeHTML(formatDateJP(date,group.date))}</div></header><div class="day-body"><div class="timeline-side">${group.items.map((item,itemIdx)=>renderEvent(item,itemIdx===group.items.length-1)).join('')}</div><aside class="memo-side"><div class="memo-title">MEMO</div><div class="memo-card"><div class="memo-label">今日の概要</div><div class="memo-value">${escapeHTML(title)}</div></div><div class="memo-card"><div class="memo-label">プランメモ</div><div class="memo-value">${escapeHTML(memo.summary)}</div>${memo.notes.length?`<ul class="memo-bullets">${memo.notes.map(n=>`<li>${escapeHTML(n)}</li>`).join('')}</ul>`:''}</div><div class="memo-card"><div class="memo-label">費用メモ</div><div class="memo-value">移動費・利用料は各タイルをタップすると詳細で確認できます。</div><div class="cost-chip-wrap">${memo.transportModes.map(v=>`<span class="cost-chip">${escapeHTML(v)}</span>`).join('')||'<span class="cost-chip">移動情報なし</span>'}</div></div></aside></div></section>`;}
-function renderEvent(item,isLast){const meta=[]; if(item.kind) meta.push(`<span class="meta-item">${escapeHTML(item.kind)}</span>`); if(item.transport) meta.push(`<span class="meta-item">${escapeHTML(item.transport)}</span>`); if(item.moveCost&&item.moveCost!=='-') meta.push(`<span class="meta-item">移動費 ${escapeHTML(item.moveCost)}</span>`); if(item.fee&&item.fee!=='-') meta.push(`<span class="meta-item">利用料 ${escapeHTML(item.fee)}</span>`); return `<article class="event"><div class="time-col">${escapeHTML(formatTime(item.start,item.end))}</div><div class="icon-col"><div class="icon-stack"><div class="icon">${getIconSVG(item)}</div>${isLast?'':`<div class="connector"><span></span><span></span><span></span></div>`}</div></div><div class="card" data-id="${item.id}" tabindex="0" role="button" aria-label="${escapeAttr(item.place)} の詳細を開く">${item.lat!=null&&item.lng!=null?`<a class="map-link" href="${escapeAttr(buildMapUrl(item))}" target="_blank" rel="noopener noreferrer" aria-label="地図を開く" onclick="event.stopPropagation();">${mapIcon()}</a>`:''}<div class="place">${escapeHTML(item.place||'場所未設定')}</div><p class="desc">${escapeHTML(item.content||'内容未設定')}</p>${item.note?`<div class="subline">${escapeHTML(item.note)}</div>`:''}${meta.length?`<div class="meta">${meta.join('')}</div>`:''}</div></article>`;}
+
+function render(){
+  if(!rows.length){
+    daysRoot.innerHTML='<section class="empty">CSVを読み込むと、ここに日ごとの行程が表示されます。</section>';
+    return;
+  }
+  const groups=groupByDate(rows);
+  daysRoot.innerHTML=groups.map((g,idx)=>renderDay(g,idx)).join('');
+  daysRoot.querySelectorAll('.card[data-id]').forEach(card=>card.addEventListener('click',()=>openDetailFromRow(Number(card.dataset.id))));
+}
+
+function groupByDate(items){
+  const map=new Map();
+  items.forEach(item=>{if(!map.has(item.date)) map.set(item.date,[]); map.get(item.date).push(item);});
+  return [...map.entries()].map(([date,list])=>({date,items:list}));
+}
+function renderDay(group,idx){
+  const date=new Date(group.date+'T00:00:00');
+  const title=getDayTitle(group,idx);
+  const memo=buildDailyMemo(group);
+  return `<section class="day-page"><header class="day-top"><div class="day-kicker"><span class="left">${SECTION_LABEL}</span><span class="right">${APP_TITLE} DAY${idx+1}</span></div><div class="day-date">${escapeHTML(formatDateJP(date,group.date))}</div></header><div class="day-body"><div class="timeline-side">${group.items.map((item,itemIdx)=>renderEvent(item,itemIdx===group.items.length-1)).join('')}</div><aside class="memo-side"><div class="memo-title">MEMO</div><div class="memo-card"><div class="memo-label">今日の概要</div><div class="memo-value">${escapeHTML(title)}</div></div><div class="memo-card"><div class="memo-label">プランメモ</div><div class="memo-value">${escapeHTML(memo.summary)}</div>${memo.notes.length?`<ul class="memo-bullets">${memo.notes.map(n=>`<li>${escapeHTML(n)}</li>`).join('')}</ul>`:''}</div><div class="memo-card"><div class="memo-label">費用メモ</div><div class="memo-value">移動費・利用料は各タイルをタップすると詳細で確認できます。</div><div class="cost-chip-wrap">${memo.transportModes.map(v=>`<span class="cost-chip">${escapeHTML(v)}</span>`).join('')||'<span class="cost-chip">移動情報なし</span>'}</div></div></aside></div></section>`;
+}
+function renderEvent(item,isLast){
+  const meta=[];
+  if(item.kind) meta.push(`<span class="meta-item">${escapeHTML(item.kind)}</span>`);
+  if(item.transport) meta.push(`<span class="meta-item">${escapeHTML(item.transport)}</span>`);
+  if(item.moveCost&&item.moveCost!=='-') meta.push(`<span class="meta-item">移動費 ${escapeHTML(item.moveCost)}</span>`);
+  if(item.fee&&item.fee!=='-') meta.push(`<span class="meta-item">利用料 ${escapeHTML(item.fee)}</span>`);
+  return `<article class="event"><div class="time-col">${escapeHTML(formatTime(item.start,item.end))}</div><div class="icon-col"><div class="icon-stack"><div class="icon">${getIconSVG(item)}</div>${isLast?'':`<div class="connector"><span></span><span></span><span></span></div>`}</div></div><div class="card" data-id="${item.id}" tabindex="0" role="button" aria-label="${escapeAttr(item.place)} の詳細を開く">${item.lat!=null&&item.lng!=null?`<a class="map-link" href="${escapeAttr(buildMapUrl(item))}" target="_blank" rel="noopener noreferrer" aria-label="地図を開く" onclick="event.stopPropagation();">${mapIcon()}</a>`:''}<div class="place">${escapeHTML(item.place||'場所未設定')}</div><p class="desc">${escapeHTML(item.content||'内容未設定')}</p>${item.note?`<div class="subline">${escapeHTML(item.note)}</div>`:''}${meta.length?`<div class="meta">${meta.join('')}</div>`:''}</div></article>`;
+}
 function getDayTitle(group,idx){const summary=group.items.find(v=>v.summary)?.summary||''; if(summary) return summary; const places=group.items.map(v=>v.place).filter(Boolean); return places.length?places.slice(0,3).join(' / '):`DAY ${idx+1}`;}
 function buildDailyMemo(group){const summary=group.items.find(v=>v.summary)?.summary||'この日の行程をまとめています。'; const notes=[...new Set(group.items.map(v=>v.note).filter(Boolean))].slice(0,4); const transportModes=[...new Set(group.items.map(v=>v.transport).filter(Boolean))].slice(0,5); return {summary,notes,transportModes};}
-function getIconSVG(item){const explicit=normalizeIconKey(item.icon); if(explicit) return iconFromKey(explicit); const text=`${item.kind} ${item.transport} ${item.content} ${item.place}`; if(/飛行機|空港|仁川|関西空港/.test(text)) return iconPlane(); if(/Railjet|列車|電車|地下鉄|CAT|S-?Bahn|駅|Regionalbus|トラム/.test(text)) return iconTrain(); if(/徒歩|散策|旧市街/.test(text)) return iconWalk(); if(/宿泊|ホテル/.test(text)) return iconHotel(); if(/食事|ランチ|ディナー|朝食|昼食|夕食|軽食|カフェ/.test(text)) return iconMeal(); if(/音楽|concert|opera|歌劇場|楽友協会|オペラ|バレエ/.test(text)) return iconMusic(); if(/大聖堂|教会|城|王宮|博物館|広場|観光/.test(text)) return iconLandmark(); return iconPin();}
-function normalizeIconKey(value){const key=String(value||'').trim().toLowerCase(); if(!key) return ''; const aliases={plane:'plane','飛行機':'plane','airplane':'plane','flight':'plane',train:'train','電車':'train','列車':'train','rail':'train','railway':'train','bus':'train','walk':'walk','徒歩':'walk','散策':'walk','hotel':'hotel','宿泊':'hotel','meal':'meal','食事':'meal','food':'meal','music':'music','音楽':'music','concert':'music','landmark':'landmark','観光':'landmark','sightseeing':'landmark',pin:'pin','ピン':'pin','map':'pin'}; return aliases[key]||'';}
+
+function buildDateColors(){
+  const dates=[...new Set(mapPoints.map(p=>p.date).filter(Boolean))].sort();
+  dateColorMap={};
+  dates.forEach((date,idx)=>{dateColorMap[date]=dayColors[idx % dayColors.length];});
+}
+function buildMapPoints(){
+  const onlyMapRows=rows.filter(r=>r.lat!=null && r.lng!=null);
+  mapRows=onlyMapRows;
+  const grouped=new Map();
+  onlyMapRows.forEach(r=>{
+    const key=[r.date,r.place,r.lat,r.lng].join('|');
+    if(!grouped.has(key)) grouped.set(key,{key,id:key,date:r.date,place:r.place,lat:r.lat,lng:r.lng,rows:[]});
+    grouped.get(key).rows.push(r);
+  });
+  mapPoints=[...grouped.values()].map((p,idx)=>{
+    p.index=idx;
+    p.summary=p.rows.find(v=>v.summary)?.summary || p.rows[0]?.content || '';
+    p.color='#64748b';
+    return p;
+  });
+}
+
+function renderLegends(){
+  const dates=[...new Set(mapPoints.map(p=>p.date).filter(Boolean))].sort();
+  const html=dates.map(date=>`<div class="legend-row"><span class="legend-swatch" style="background:${escapeAttr(getDateColor(date))}"></span><span>${escapeHTML(formatDateLabel(date))}</span></div>`).join('') || '<div class="map-note">日付情報なし</div>';
+  document.getElementById('dateLegend').innerHTML=html;
+  document.getElementById('inlineLegend').innerHTML=html ? `<div class="legend-list">${html}</div>` : '';
+}
+
+function ensureMapReady(){
+  if(map || !document.getElementById('mapCanvas')) return;
+  map = new maplibregl.Map({
+    container:'mapCanvas',
+    style:`https://api.maptiler.com/maps/streets/style.json?key=${MAPTILER_KEY}`,
+    center:[16.37,48.21],
+    zoom:4.7
+  });
+  map.on('load',()=>{
+    map.addSource('trip-points',{
+      type:'geojson',
+      data:getMapGeoJSON(),
+      cluster:true,
+      clusterMaxZoom:9,
+      clusterRadius:42
+    });
+    map.addLayer({
+      id:'clusters',
+      type:'circle',
+      source:'trip-points',
+      filter:['has','point_count'],
+      paint:{'circle-color':'#475569','circle-radius':18,'circle-stroke-width':2,'circle-stroke-color':'#fff'}
+    });
+    map.addLayer({
+      id:'cluster-count',
+      type:'symbol',
+      source:'trip-points',
+      filter:['has','point_count'],
+      layout:{'text-field':['get','point_count'],'text-size':13,'text-font':['Open Sans Bold','Arial Unicode MS Bold']},
+      paint:{'text-color':'#fff'}
+    });
+    map.addSource('route',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+    map.addLayer({
+      id:'route-line', type:'line', source:'route',
+      paint:{'line-color':varCss('--route','#2563eb'),'line-width':4.5,'line-opacity':0.9}
+    });
+    map.addLayer({
+      id:'points',
+      type:'circle',
+      source:'trip-points',
+      filter:['!has','point_count'],
+      paint:{
+        'circle-color':['get','color'],
+        'circle-radius':['case',['boolean',['get','selected'],false],11,8],
+        'circle-stroke-width':['case',['boolean',['get','selected'],false],3,2],
+        'circle-stroke-color':['case',['boolean',['get','selected'],false],'#111827','#ffffff']
+      }
+    });
+    map.addLayer({
+      id:'point-labels',
+      type:'symbol',
+      source:'trip-points',
+      filter:['!has','point_count'],
+      layout:{
+        'text-field':['get','place'],
+        'text-size':12,
+        'text-font':['Open Sans Semibold','Arial Unicode MS Bold'],
+        'text-anchor':'top',
+        'text-offset':[0,1.25],
+        'text-max-width':8,
+        'text-allow-overlap':false,
+        'text-ignore-placement':false
+      },
+      paint:{
+        'text-color':'#111827',
+        'text-halo-color':'#ffffff',
+        'text-halo-width':2,
+        'text-halo-blur':0.4
+      }
+    });
+
+    map.on('click','clusters',e=>{
+      const f=map.queryRenderedFeatures(e.point,{layers:['clusters']})[0];
+      map.getSource('trip-points').getClusterExpansionZoom(f.properties.cluster_id,(err,zoom)=>{
+        if(err) return;
+        map.easeTo({center:f.geometry.coordinates,zoom});
+      });
+    });
+    map.on('click',e=>{
+      const features=map.queryRenderedFeatures([[e.point.x-10,e.point.y-10],[e.point.x+10,e.point.y+10]],{layers:['points']});
+      if(features.length){
+        const id=String(features[0].properties.id);
+        openPointPopup(id, features[0].geometry.coordinates);
+      }else{
+        closePointPopup();
+      }
+    });
+    map.on('movestart',closePointPopup);
+    fitMapToAllPoints();
+  });
+}
+
+function isAustriaPoint(p){
+  return p && p.lat>=46.0 && p.lat<=49.2 && p.lng>=9.0 && p.lng<=17.5;
+}
+function getInitialMapPoints(){
+  const austriaPoints=mapPoints.filter(isAustriaPoint);
+  return austriaPoints.length ? austriaPoints : mapPoints;
+}
+function fitMapToAllPoints(){
+  if(!map || !mapPoints.length) return;
+  const initialPoints=getInitialMapPoints();
+  const coords=initialPoints.map(p=>[p.lng,p.lat]);
+  if(!coords.length) return;
+  if(coords.length===1){ map.easeTo({center:coords[0],zoom:7,duration:0}); return; }
+  const bounds=new maplibregl.LngLatBounds(coords[0],coords[0]);
+  coords.forEach(c=>bounds.extend(c));
+  map.fitBounds(bounds,{padding:{top:70,bottom:70,left:70,right:70},duration:0,maxZoom:7});
+}
+function fitMapToSelected(){
+  if(!map || selectedPoints.length<1) return;
+  const pts=selectedPoints.map(id=>mapPoints.find(p=>p.id===id)).filter(Boolean);
+  const coords=pts.map(p=>[p.lng,p.lat]);
+  if(coords.length===1){ map.easeTo({center:coords[0],zoom:10,duration:500}); return; }
+  const bounds=new maplibregl.LngLatBounds(coords[0],coords[0]);
+  coords.forEach(c=>bounds.extend(c));
+  map.fitBounds(bounds,{padding:{top:80,bottom:80,left:80,right:80},duration:600,maxZoom:8});
+}
+function getMapGeoJSON(){
+  return {
+    type:'FeatureCollection',
+    features:mapPoints.map(p=>({
+      type:'Feature',
+      geometry:{type:'Point',coordinates:[p.lng,p.lat]},
+      properties:{
+        id:p.id,
+        place:p.place,
+        date:p.date,
+        count:p.rows.length,
+        color:getDateColor(p.date),
+        selected:selectedPoints.includes(p.id)
+      }
+    }))
+  };
+}
+function refreshMapSource(){
+  if(!map?.getSource('trip-points')) return;
+  map.getSource('trip-points').setData(getMapGeoJSON());
+}
+
+function getDateColor(date){return dateColorMap[date] || '#64748b';}
+function formatDateLabel(date){
+  const d=new Date(date+'T00:00:00');
+  return Number.isNaN(d.getTime()) ? date : `${d.getMonth()+1}/${d.getDate()} (${['日','月','火','水','木','金','土'][d.getDay()]})`;
+}
+
+function openPointPopup(id, coords){
+  const point=mapPoints.find(p=>p.id===id);
+  if(!point || !map) return;
+  closePointPopup();
+  const selectedNow=selectedPoints.includes(id);
+  const html=`<div class="popup-card"><div class="popup-head"><div><div class="popup-title">${escapeHTML(point.place||'地点')}</div><div class="popup-date">${escapeHTML(formatDateLabel(point.date))}</div></div><span class="legend-swatch" style="background:${escapeAttr(getDateColor(point.date))};width:12px;height:12px"></span></div><div class="popup-meta">${escapeHTML(point.summary||'詳細未設定')}<br>${escapeHTML(point.rows.length)}件の行程</div><div class="popup-actions"><button class="popup-pick" data-popup-action="toggle" data-id="${escapeAttr(id)}">${selectedNow?'解除':'選択'}</button><button class="popup-detail" data-popup-action="detail" data-id="${escapeAttr(id)}">詳細</button></div></div>`;
+  pointPopup=new maplibregl.Popup({closeButton:false,offset:18}).setLngLat(coords).setHTML(html).addTo(map);
+}
+function closePointPopup(){ if(pointPopup){ pointPopup.remove(); pointPopup=null; } }
+
+function togglePointSelection(id){
+  if(selectedPoints.includes(id)) selectedPoints=selectedPoints.filter(v=>v!==id);
+  else selectedPoints.push(id);
+  persistState();
+  refreshMapSource();
+  renderSelectedPoints();
+  updateRouteSummary();
+}
+function renderSelectedPoints(){
+  const html=selectedPoints.map((id,idx)=>{
+    const p=mapPoints.find(v=>v.id===id);
+    if(!p) return '';
+    return `<div class="selected-item"><div class="selected-main"><div class="selected-name">${idx+1}. ${escapeHTML(p.place)}</div><div class="selected-meta">${escapeHTML(formatDateLabel(p.date))} / ${escapeHTML(p.rows.length)}件</div></div><button class="remove-btn" type="button" onclick="removeSelectedPoint('${escapeJs(id)}')">×</button></div>`;
+  }).join('') || '<div class="map-note">未選択です。</div>';
+  document.getElementById('selectedList').innerHTML=html;
+}
+function removeSelectedPoint(id){
+  selectedPoints=selectedPoints.filter(v=>v!==id);
+  persistState();
+  refreshMapSource();
+  renderSelectedPoints();
+  updateRouteSummary();
+}
+function persistState(){
+  try{localStorage.setItem(STORAGE_KEY, JSON.stringify({selectedPoints, activeView}));}catch(err){}
+}
+function hydrateState(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(!raw) return;
+    const data=JSON.parse(raw);
+    if(Array.isArray(data.selectedPoints)) selectedPoints=data.selectedPoints;
+    if(data.activeView==='map' || data.activeView==='schedule') activeView=data.activeView;
+  }catch(err){}
+}
+function updateRouteSummary(extra=''){
+  const text=selectedPoints.length<2
+    ? `選択中: ${selectedPoints.length}地点。地点を2つ以上選ぶと、現在の選択順で経路表示できます。`
+    : `選択中: ${selectedPoints.length}地点。現在の順序で経路表示できます。${extra?` ${extra}`:''}`;
+  document.getElementById('routeSummary').textContent=text;
+  document.getElementById('inlineRouteInfo').textContent=text;
+}
+
+async function drawRoute(){
+  if(selectedPoints.length<2 || !map?.getSource('route')) return;
+  const points=selectedPoints.map(id=>mapPoints.find(p=>p.id===id)).filter(Boolean);
+  const coords=points.map(p=>[p.lng,p.lat]);
+  showLoading(true);
+  try{
+    const url=`https://router.project-osrm.org/route/v1/driving/${coords.map(c=>c.join(',')).join(';')}?overview=full&geometries=geojson`;
+    const res=await fetch(url);
+    const data=await res.json();
+    if(!data.routes?.[0]?.geometry) throw new Error('route unavailable');
+    map.getSource('route').setData({type:'Feature',geometry:data.routes[0].geometry});
+    fitMapToSelected();
+    updateRouteSummary('地図上に経路を描画しました。');
+  }catch(err){
+    updateRouteSummary('経路取得に失敗しました。');
+  }finally{
+    showLoading(false);
+  }
+}
+
+function clearRoute(){
+  if(map?.getSource('route')) map.getSource('route').setData({type:'FeatureCollection',features:[]});
+  updateRouteSummary(selectedPoints.length ? 'ルート表示を消去しました。' : '');
+}
+
+function setView(view){
+  activeView=view;
+  document.getElementById('scheduleView').style.display=view==='schedule'?'block':'none';
+  document.getElementById('mapView').style.display=view==='map'?'block':'none';
+  document.getElementById('switchSchedule').classList.toggle('active',view==='schedule');
+  document.getElementById('switchMap').classList.toggle('active',view==='map');
+  document.getElementById('topbarSub').textContent=view==='schedule'?'工程表':'マップ';
+  document.getElementById('mapOnlyBlock1').classList.toggle('hidden',view!=='map');
+  document.getElementById('mapOnlyBlock2').classList.toggle('hidden',view!=='map');
+  persistState();
+  closeMenu();
+  if(view==='map'){
+    ensureMapReady();
+    setTimeout(()=>{
+      map?.resize();
+      if(selectedPoints.length) fitMapToSelected();
+      else fitMapToAllPoints();
+    },80);
+  }
+}
+function toggleMenu(){
+  const menu=document.getElementById('sideMenu');
+  const overlay=document.getElementById('menuOverlay');
+  const opened=menu.classList.toggle('open');
+  overlay.classList.toggle('show',opened);
+  menu.setAttribute('aria-hidden',String(!opened));
+}
+function closeMenu(){
+  document.getElementById('sideMenu').classList.remove('open');
+  document.getElementById('menuOverlay').classList.remove('show');
+  document.getElementById('sideMenu').setAttribute('aria-hidden','true');
+}
+
+function openDetailFromRow(id){
+  const item=rows.find(v=>v.id===id);
+  if(!item) return;
+  const pseudoPoint={
+    id:`row-${id}`,
+    place:item.place,
+    date:item.date,
+    lat:item.lat,lng:item.lng,
+    rows:[item],
+    summary:item.summary || item.content || ''
+  };
+  openDetail(pseudoPoint,false,'internal');
+}
+function openDetailFromPointId(id){
+  const point=mapPoints.find(v=>v.id===id);
+  if(!point) return;
+  openDetail(point,true,'google');
+}
+function openDetail(point, allowSelection, mapLinkMode='google'){
+  detailTitle.textContent=point.place||'詳細';
+  detailSub.textContent=[formatDateLabel(point.date), point.summary].filter(Boolean).join(' / ');
+  const allRows=point.rows || [];
+  const kindSet=[...new Set(allRows.map(v=>v.kind).filter(Boolean))];
+  const transportSet=[...new Set(allRows.map(v=>v.transport).filter(Boolean))];
+  const fees=[...new Set(allRows.map(v=>v.fee).filter(v=>v && v!=='-'))];
+  const costs=[...new Set(allRows.map(v=>v.moveCost).filter(v=>v && v!=='-'))];
+  detailGrid.innerHTML=[
+    ['日付', formatDateLabel(point.date) || '未設定'],
+    ['地点数', `${allRows.length}件の行程`],
+    ['種別', kindSet.join(' / ') || '未設定'],
+    ['移動手段', transportSet.join(' / ') || '未設定'],
+    ['移動費', costs.join(' / ') || '未設定'],
+    ['利用料', fees.join(' / ') || '未設定'],
+    ['その日の概要', point.summary || '未設定', true]
+  ].map(([label,value,wide])=>`<section class="detail-card ${wide?'detail-wide':''}"><div class="detail-label">${escapeHTML(label)}</div><div class="detail-value">${escapeHTML(value)}</div></section>`).join('');
+
+  detailEntries.innerHTML=allRows.map(item=>{
+    const chips=[];
+    if(item.kind) chips.push(`<span class="entry-chip">${escapeHTML(item.kind)}</span>`);
+    if(item.transport) chips.push(`<span class="entry-chip">${escapeHTML(item.transport)}</span>`);
+    if(item.moveCost && item.moveCost!=='-') chips.push(`<span class="entry-chip">移動費 ${escapeHTML(item.moveCost)}</span>`);
+    if(item.fee && item.fee!=='-') chips.push(`<span class="entry-chip">利用料 ${escapeHTML(item.fee)}</span>`);
+    return `<section class="entry-card"><div class="entry-time">${escapeHTML(formatTime(item.start,item.end))}</div><div class="entry-title">${escapeHTML(item.content || item.place || '未設定')}</div><div class="entry-text">${escapeHTML(item.note || '備考なし')}</div>${chips.length?`<div class="entry-meta">${chips.join('')}</div>`:''}</section>`;
+  }).join('');
+
+  if(point.lat!=null && point.lng!=null){
+    detailMapLink.style.display='inline-flex';
+    if(mapLinkMode==='internal'){
+      detailMapLink.href='#map';
+      detailMapLink.removeAttribute('target');
+      detailMapLink.onclick=e=>{
+        e.preventDefault();
+        closeDetail();
+        openMapPinFromDetail(point);
+      };
+    }else{
+      detailMapLink.href=buildMapUrl(point);
+      detailMapLink.setAttribute('target','_blank');
+      detailMapLink.onclick=null;
+    }
+  }else{
+    detailMapLink.style.display='none';
+    detailMapLink.onclick=null;
+  }
+
+  if(allowSelection){
+    const selectedNow=selectedPoints.includes(point.id);
+    detailSelectBtn.style.display='inline-flex';
+    detailSelectBtn.textContent=selectedNow?'ルートから外す':'ルートに追加';
+    detailSelectBtn.onclick=()=>{togglePointSelection(point.id); openDetailFromPointId(point.id);};
+  }else{
+    detailSelectBtn.style.display='none';
+    detailSelectBtn.onclick=null;
+  }
+
+  detailOverlay.classList.add('show');
+  detailOverlay.setAttribute('aria-hidden','false');
+  document.body.classList.add('locked');
+}
+function closeDetail(){
+  detailOverlay.classList.remove('show');
+  detailOverlay.setAttribute('aria-hidden','true');
+  if(app.style.display==='block') document.body.classList.remove('locked');
+}
+
+function findMapPointForDetail(point){
+  if(!point || point.lat==null || point.lng==null) return null;
+  if(mapPoints.some(p=>p.id===point.id)) return mapPoints.find(p=>p.id===point.id);
+  return mapPoints.find(p=>
+    Math.abs(p.lat-point.lat)<0.000001 &&
+    Math.abs(p.lng-point.lng)<0.000001 &&
+    (!point.place || p.place===point.place)
+  ) || mapPoints.find(p=>
+    Math.abs(p.lat-point.lat)<0.000001 &&
+    Math.abs(p.lng-point.lng)<0.000001
+  );
+}
+function openMapPinFromDetail(point){
+  const target=findMapPointForDetail(point);
+  setView('map');
+  ensureMapReady();
+  const show=()=>{
+    if(!map || !target) return;
+    map.resize();
+    map.easeTo({center:[target.lng,target.lat],zoom:11,duration:600});
+    setTimeout(()=>openPointPopup(target.id,[target.lng,target.lat]),650);
+  };
+  if(map?.loaded()) setTimeout(show,100);
+  else map?.once('load',()=>setTimeout(show,100));
+}
+
+function buildMapUrl(item){
+  if(item.lat!=null&&item.lng!=null) return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.lat+','+item.lng)}`;
+  return '#';
+}
+function formatDateJP(dateObj,raw){if(!(dateObj instanceof Date)||Number.isNaN(dateObj.getTime())) return raw; const y=dateObj.getFullYear(), m=String(dateObj.getMonth()+1).padStart(2,'0'), d=String(dateObj.getDate()).padStart(2,'0'); return `${y}.${m}.${d}`;}
+function formatTime(start,end){if(start&&end) return `${start}–${end}`; return start||end||'時間未設定';}
+function escapeHTML(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function escapeAttr(v){return escapeHTML(v).replace(/`/g,'&#96;');}
+function escapeJs(v){return String(v??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
+function varCss(name,fallback){return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;}
+
+function getIconSVG(item){
+  const explicit=normalizeIconKey(item.icon);
+  if(explicit) return iconFromKey(explicit);
+  const text=`${item.kind} ${item.transport} ${item.content} ${item.place}`;
+  if(/飛行機|空港|仁川|関西空港/.test(text)) return iconPlane();
+  if(/Railjet|列車|電車|地下鉄|CAT|S-?Bahn|駅|Regionalbus|トラム/.test(text)) return iconTrain();
+  if(/徒歩|散策|旧市街/.test(text)) return iconWalk();
+  if(/宿泊|ホテル/.test(text)) return iconHotel();
+  if(/食事|ランチ|ディナー|朝食|昼食|夕食|軽食|カフェ/.test(text)) return iconMeal();
+  if(/音楽|concert|opera|歌劇場|楽友協会|オペラ|バレエ/.test(text)) return iconMusic();
+  if(/大聖堂|教会|城|王宮|博物館|広場|観光/.test(text)) return iconLandmark();
+  return iconPin();
+}
+function normalizeIconKey(value){
+  const key=String(value||'').trim().toLowerCase();
+  if(!key) return '';
+  const aliases={plane:'plane','飛行機':'plane','airplane':'plane','flight':'plane',train:'train','電車':'train','列車':'train','rail':'train','railway':'train','bus':'train',walk:'walk','徒歩':'walk','散策':'walk',hotel:'hotel','宿泊':'hotel',meal:'meal','食事':'meal','food':'meal',music:'music','音楽':'music','concert':'music',landmark:'landmark','観光':'landmark','sightseeing':'landmark',pin:'pin','ピン':'pin','map':'pin'};
+  return aliases[key]||'';
+}
 function iconFromKey(key){switch(key){case 'plane': return iconPlane(); case 'train': return iconTrain(); case 'walk': return iconWalk(); case 'hotel': return iconHotel(); case 'meal': return iconMeal(); case 'music': return iconMusic(); case 'landmark': return iconLandmark(); default: return iconPin();}}
-function buildMapUrl(item){if(item.lat!=null&&item.lng!=null) return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.lat+','+item.lng)}`; return '#';}
-const detailOverlay=document.getElementById('detailOverlay'), detailTitle=document.getElementById('detailTitle'), detailSub=document.getElementById('detailSub'), detailGrid=document.getElementById('detailGrid'), detailMapLink=document.getElementById('detailMapLink'); document.getElementById('detailClose').addEventListener('click',closeDetail); document.getElementById('detailCloseSecondary').addEventListener('click',closeDetail); detailOverlay.addEventListener('click',e=>{if(e.target===detailOverlay) closeDetail();}); document.addEventListener('keydown',e=>{if(e.key==='Escape') closeDetail();});
-function openDetail(id){const item=rows.find(v=>v.id===id); if(!item) return; detailTitle.textContent=item.place||'詳細'; detailSub.textContent=[item.start&&formatTime(item.start,item.end), item.content].filter(Boolean).join('  /  '); detailGrid.innerHTML=[[ '内容', item.content||'未設定'],['種別', item.kind||'未設定'],['移動手段', item.transport||'未設定'],['移動費', item.moveCost||'未設定'],['利用料', item.fee||'未設定'],['日時', `${item.date||''} ${formatTime(item.start,item.end)}`.trim()||'未設定'],['その日の概要', item.summary||'未設定', true],['備考', item.note||'未設定', true]].map(([label,value,wide])=>`<section class="detail-card ${wide?'detail-wide':''}"><div class="detail-label">${escapeHTML(label)}</div><div class="detail-value">${escapeHTML(value)}</div></section>`).join(''); if(item.lat!=null&&item.lng!=null){detailMapLink.style.display='inline-flex'; detailMapLink.href=buildMapUrl(item);} else detailMapLink.style.display='none'; detailOverlay.classList.add('show'); detailOverlay.setAttribute('aria-hidden','false'); document.body.classList.add('locked');}
-function closeDetail(){detailOverlay.classList.remove('show'); detailOverlay.setAttribute('aria-hidden','true'); if(app.style.display==='block') document.body.classList.remove('locked');}
-function formatDateJP(dateObj,raw){if(!(dateObj instanceof Date)||Number.isNaN(dateObj.getTime())) return raw; const y=dateObj.getFullYear(), m=String(dateObj.getMonth()+1).padStart(2,'0'), d=String(dateObj.getDate()).padStart(2,'0'); return `${y}.${m}.${d}`;} function formatTime(start,end){if(start&&end) return `${start}–${end}`; return start||end||'時間未設定';} function escapeHTML(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');} function escapeAttr(v){return escapeHTML(v).replace(/`/g,'&#96;');}
-function mapIcon(){return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s6-5.3 6-10a6 6 0 1 0-12 0c0 4.7 6 10 6 10Z"></path><circle cx="12" cy="11" r="2.5"></circle></svg>`;} function iconPin(){return `<svg viewBox="0 0 24 24"><path d="M12 20s-5-4.6-5-8.8A5 5 0 1 1 17 11.2C17 15.4 12 20 12 20Z"></path><circle cx="12" cy="11" r="2.1"></circle></svg>`;} function iconPlane(){return `<svg viewBox="0 0 24 24"><path d="M3 13l18-8-5 7 5 7-18-8h7l3-6-3 6H3Z"></path></svg>`;} function iconTrain(){return `<svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="14" rx="3"></rect><path d="M9 7h6M8 20l2-3m6 3-2-3M8 12h8"></path></svg>`;} function iconHotel(){return `<svg viewBox="0 0 24 24"><path d="M4 20V7m0 13h16M8 20V4h8v16M10 8h1m3 0h1m-4 4h1m3 0h1"></path></svg>`;} function iconMeal(){return `<svg viewBox="0 0 24 24"><path d="M6 3v8M9 3v8M6 7h3M15 3v18M19 3c1.5 2 1.5 4 0 6-1 1.2-2 1.7-4 2"></path></svg>`;} function iconMusic(){return `<svg viewBox="0 0 24 24"><path d="M15 4v10.5a2.5 2.5 0 1 1-2-2.45V6l7-2v8.5a2.5 2.5 0 1 1-2-2.45V4"></path></svg>`;} function iconLandmark(){return `<svg viewBox="0 0 24 24"><path d="M4 20h16M6 20V9l6-4 6 4v11M9 20v-5h6v5"></path></svg>`;} function iconWalk(){return `<svg viewBox="0 0 24 24"><circle cx="13" cy="4.5" r="1.8"></circle><path d="M11 9l2-2 2 1 1 3m-5-2 1 4-3 3m4-4 3 3 1 4m-7 1 2-4"></path></svg>`;}
+function mapIcon(){return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s6-5.3 6-10a6 6 0 1 0-12 0c0 4.7 6 10 6 10Z"></path><circle cx="12" cy="11" r="2.5"></circle></svg>`;}
+function iconPin(){return `<svg viewBox="0 0 24 24"><path d="M12 20s-5-4.6-5-8.8A5 5 0 1 1 17 11.2C17 15.4 12 20 12 20Z"></path><circle cx="12" cy="11" r="2.1"></circle></svg>`;}
+function iconPlane(){return `<svg viewBox="0 0 24 24"><path d="M3 13l18-8-5 7 5 7-18-8h7l3-6-3 6H3Z"></path></svg>`;}
+function iconTrain(){return `<svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="14" rx="3"></rect><path d="M9 7h6M8 20l2-3m6 3-2-3M8 12h8"></path></svg>`;}
+function iconHotel(){return `<svg viewBox="0 0 24 24"><path d="M4 20V7m0 13h16M8 20V4h8v16M10 8h1m3 0h1m-4 4h1m3 0h1"></path></svg>`;}
+function iconMeal(){return `<svg viewBox="0 0 24 24"><path d="M6 3v8M9 3v8M6 7h3M15 3v18M19 3c1.5 2 1.5 4 0 6-1 1.2-2 1.7-4 2"></path></svg>`;}
+function iconMusic(){return `<svg viewBox="0 0 24 24"><path d="M15 4v10.5a2.5 2.5 0 1 1-2-2.45V6l7-2v8.5a2.5 2.5 0 1 1-2-2.45V4"></path></svg>`;}
+function iconLandmark(){return `<svg viewBox="0 0 24 24"><path d="M4 20h16M6 20V9l6-4 6 4v11M9 20v-5h6v5"></path></svg>`;}
+function iconWalk(){return `<svg viewBox="0 0 24 24"><circle cx="13" cy="4.5" r="1.8"></circle><path d="M11 9l2-2 2 1 1 3m-5-2 1 4-3 3m4-4 3 3 1 4m-7 1 2-4"></path></svg>`;}
+
+document.addEventListener('click',e=>{
+  const btn=e.target.closest('[data-popup-action]');
+  if(!btn) return;
+  const id=String(btn.dataset.id||'');
+  if(btn.dataset.popupAction==='toggle'){
+    togglePointSelection(id);
+    const p=mapPoints.find(v=>v.id===id);
+    if(p) openPointPopup(id,[p.lng,p.lat]);
+  }else if(btn.dataset.popupAction==='detail'){
+    openDetailFromPointId(id);
+  }
+});
+
+window.addEventListener('resize',()=>{ if(activeView==='map') map?.resize(); });
 </script>
-</body></html>
+</body>
+</html>
